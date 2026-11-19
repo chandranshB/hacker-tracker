@@ -1,11 +1,11 @@
 {
   "device_id": "03e768e104ef026d",
-  "last_tracked_utc": "2026-11-19T14:32:28.354499+00:00",
-  "last_tracked_display": "2026-11-19 14:32:28 UTC",
+  "last_tracked_utc": "2026-11-19T14:38:43.481334+00:00",
+  "last_tracked_display": "2026-11-19 14:38:43 UTC",
   "is_online": true,
   "battery": {
-    "raw": "43%",
-    "percentage": 43
+    "raw": "42%",
+    "percentage": 42
   },
   "network": {
     "ip_address": "106.211.47.194",
@@ -57,7 +57,7 @@
   "raw": {
     "client": {
       "androidV": "15",
-      "battery": "43%",
+      "battery": "42%",
       "cpu_arch": "arm64-v8a",
       "deviceId": "03e768e104ef026d",
       "ip_address": "106.211.47.194",
