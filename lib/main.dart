@@ -93,7 +93,6 @@ class _MainScreenState extends State<MainScreen> {
   List<Map<String, dynamic>> _allMessages = [];
   List<Map<String, dynamic>> _filteredMessages = [];
   List<Map<String, dynamic>> _batteryHistory = [];
-  List<Map<String, dynamic>> _events = [];
   Set<String> _selectedFilter = {'all'};
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -124,16 +123,6 @@ class _MainScreenState extends State<MainScreen> {
         final data = json.decode(historyRes.body) as List<dynamic>;
         setState(() {
           _batteryHistory = data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-        });
-      }
-    } catch (_) {}
-
-    try {
-      final eventsRes = await http.get(Uri.parse('data/events.json'));
-      if (eventsRes.statusCode == 200 && eventsRes.body != 'null') {
-        final data = json.decode(eventsRes.body) as List<dynamic>;
-        setState(() {
-          _events = data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         });
       }
     } catch (_) {}
@@ -1185,36 +1174,83 @@ class _MainScreenState extends State<MainScreen> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        // 🚨 1. C2 INFRASTRUCTURE ROLE
+        // 🚨 1. C2 INFRASTRUCTURE ROLE (GOOGLE M3 HERO CARD)
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: const Color(0xFF131318),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF262632)),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF262634)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x2A000000),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('TARGET HANDSET ROLE IN ATTACK NETWORK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                      color: Colors.amber.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.25)),
                     ),
-                    child: const Text('C2 Auto-Relay Gateway', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
+                    child: const Icon(Icons.hub_outlined, color: Colors.amberAccent, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'TARGET HANDSET ROLE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.9,
+                            color: Color(0xFF9E9EA8),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'C2 Auto-Relay Gateway',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               Text(
-                'This device ($deviceId) is not just a passive victim; the threat actors explicitly configured it as their central Auto-Relay Gateway handset. It executes automated silent background SMS commands to bind bank accounts, and relays incoming OTPs directly to Firebase.',
-                style: const TextStyle(fontSize: 12.5, height: 1.45, color: Color(0xFFD4D4D8)),
+                'Handset $deviceId is actively configured by threat actors as an operational Auto-Relay Gateway. It executes automated silent background SMS commands to bind bank accounts, and relays incoming OTPs directly to Firebase.',
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  height: 1.5,
+                  color: Color(0xFFD4D4D8),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildCapabilityChip('⚡ Silent UPI Device-Binding', Colors.amberAccent),
+                  _buildCapabilityChip('📡 Live 2FA OTP Exfiltration', const Color(0xFF00E676)),
+                ],
               ),
             ],
           ),
@@ -1233,7 +1269,10 @@ class _MainScreenState extends State<MainScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('EXFILTRATION PIPELINE · WHAT IS BEING SENT WHERE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+              const Text(
+                'EXFILTRATION PIPELINES · WHAT IS BEING SENT WHERE',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8),
+              ),
               const SizedBox(height: 14),
 
               // FLOW 1: Outbound Silent UPI Binding SMS
@@ -1249,9 +1288,7 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icons.send_and_archive,
               ),
 
-              const SizedBox(height: 12),
-              const Divider(color: Color(0xFF22222C), height: 1),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               // FLOW 2: Intercepted Inbound SMS & 2FA Exfiltration
               _buildPipelineTile(
@@ -1282,52 +1319,32 @@ class _MainScreenState extends State<MainScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('ACTIVE CONTROLLER COMMANDS & HEARTBEAT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
-              const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF00ADB5).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.terminal, color: Color(0xFF00ADB5), size: 18),
-                ),
-                title: const Text('Active Controller Command', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                subtitle: Text('Command: "$_command" on SIM Slot $_simSlot', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E28),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFF2C2C3C)),
-                  ),
-                  child: Text('user_data/$_command', style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Color(0xFF00ADB5), fontWeight: FontWeight.bold)),
-                ),
+              const Text(
+                'ACTIVE CONTROLLER COMMANDS & HEARTBEAT',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8),
               ),
-              const Divider(color: Color(0xFF22222C), height: 1),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF00E676).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.sync_alt, color: Color(0xFF00E676), size: 18),
-                ),
-                title: const Text('Liveness Heartbeat Protocol', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                subtitle: const Text('Server Ping Probe ⇄ Client Handshake Response', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0x1F00E676),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0x3300E676)),
-                  ),
-                  child: Text('$_ping ⇄ $_pong', style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Color(0xFF00E676), fontWeight: FontWeight.bold)),
-                ),
+              const SizedBox(height: 14),
+
+              // Command Tile
+              _buildCommandTile(
+                icon: Icons.terminal,
+                iconColor: const Color(0xFF00ADB5),
+                title: 'Active Controller Command',
+                subtitle: 'Dispatched on SIM Slot $_simSlot via user_data',
+                badgeText: 'user_data/$_command',
+                badgeColor: const Color(0xFF00ADB5),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Heartbeat Tile
+              _buildCommandTile(
+                icon: Icons.sync_alt,
+                iconColor: const Color(0xFF00E676),
+                title: 'Liveness Heartbeat Protocol',
+                subtitle: 'Continuous Server Ping Probe ⇄ Client Handshake',
+                badgeText: '$_ping ⇄ $_pong',
+                badgeColor: const Color(0xFF00E676),
               ),
             ],
           ),
@@ -1349,11 +1366,18 @@ class _MainScreenState extends State<MainScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('FULL RAW C2 TELEMETRY (JSON INSPECTION)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
-                  TextButton.icon(
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
-                    icon: const Icon(Icons.copy, size: 13, color: Color(0xFF00ADB5)),
-                    label: const Text('Copy JSON', style: TextStyle(fontSize: 11, color: Color(0xFF00ADB5))),
+                  const Text(
+                    'FULL RAW C2 TELEMETRY (JSON INSPECTION)',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8),
+                  ),
+                  FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                      backgroundColor: const Color(0xFF00ADB5).withValues(alpha: 0.12),
+                    ),
+                    icon: const Icon(Icons.copy, size: 12, color: Color(0xFF00ADB5)),
+                    label: const Text('Copy JSON', style: TextStyle(fontSize: 11, color: Color(0xFF00ADB5), fontWeight: FontWeight.w600)),
                     onPressed: () {
                       final rawDump = json.encode({
                         'client': {
@@ -1376,13 +1400,13 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0C0C0F),
-                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFF09090D),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFF1C1C24)),
                 ),
                 child: SelectableText(
@@ -1406,6 +1430,92 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  Widget _buildCapabilityChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommandTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required Color badgeColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D0D12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF1E1E28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: iconColor, size: 16),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  badgeText,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: badgeColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 33),
+            child: Text(
+              subtitle,
+              style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPipelineTile({
     required String title,
     required String direction,
@@ -1417,73 +1527,227 @@ class _MainScreenState extends State<MainScreen> {
     required Color statusColor,
     required IconData icon,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 16, color: statusColor),
-                const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: statusColor.withValues(alpha: 0.4)),
-              ),
-              child: Text(status, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: statusColor)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0D0D11),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFF1E1E26)),
-          ),
-          child: Column(
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D0D12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF1E1E28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Icon + Title + Status Pill (gracefully columned inside Expanded so NEVER clips)
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Text('FROM: ', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  Expanded(child: Text(from, style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFFE4E4E7)))),
-                ],
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.25)),
+                ),
+                child: Icon(icon, size: 19, color: statusColor),
               ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Text('TO:     ', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  Expanded(child: Text(to, style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: statusColor, fontWeight: FontWeight.bold))),
-                ],
-              ),
-              const SizedBox(height: 6),
-              const Text('PAYLOAD / EXFILTRATED DATA:', style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 2),
-              SelectableText(
-                payload,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 10.5, color: Color(0xFFD4D4D8), height: 1.35),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Text('OBJECTIVE: ', style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  Expanded(child: Text(objective, style: const TextStyle(fontSize: 10.5, color: Color(0xFF00ADB5), fontWeight: FontWeight.w500))),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: statusColor,
+                                letterSpacing: 0.2,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-      ],
+
+          const SizedBox(height: 14),
+
+          // 🔄 VISUAL TRANSMISSION FLOW (ORIGIN -> DESTINATION)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF13131A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF222230)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Origin
+                Row(
+                  children: [
+                    const Icon(Icons.radio_button_checked, size: 13, color: Color(0xFF8E8E9A)),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'ORIGIN',
+                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFF8E8E9A), letterSpacing: 0.6),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        from,
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFE4E4E7)),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 6, top: 3, bottom: 3),
+                  child: Container(
+                    width: 1.5,
+                    height: 12,
+                    color: const Color(0xFF2E2E3E),
+                  ),
+                ),
+                // Target
+                Row(
+                  children: [
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: statusColor),
+                    const SizedBox(width: 8),
+                    Text(
+                      'TARGET',
+                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: statusColor.withValues(alpha: 0.85), letterSpacing: 0.6),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        to,
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: statusColor),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // 📦 INTERCEPTED PAYLOAD (CLEAN CODE BLOCK + 1-TAP COPY)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF08080C),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF1E1E28)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'INTERCEPTED PAYLOAD DATA',
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF8E8E9A), letterSpacing: 0.6),
+                    ),
+                    InkWell(
+                      onTap: () => _copyToClipboard(payload, 'Payload'),
+                      borderRadius: BorderRadius.circular(4),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.copy, size: 11, color: Color(0xFF00ADB5)),
+                            SizedBox(width: 4),
+                            Text('Copy', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF00ADB5))),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                SelectableText(
+                  payload,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: Color(0xFFD4D4D8),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // 🎯 OBJECTIVE / ATTACK INTENT
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00ADB5).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF00ADB5).withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF00ADB5)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    objective,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFFB4EBEF),
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
