@@ -1,0 +1,14 @@
+[
+  {
+    "type": "INITIAL_TRACKER_RUN",
+    "timestamp": "2026-11-19T11:22:51.727378+00:00",
+    "detail": "Initialized automated surveillance tracking for device 03e768e104ef026d"
+  },
+  {
+    "type": "NEW_SMS_INTERCEPTED",
+    "timestamp": "2026-11-19T11:22:51.727378+00:00",
+    "detail": "Intercepted 613 new SMS messages on device",
+    "count": 613,
+    "total": 613
+  }
+]
