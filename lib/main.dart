@@ -67,7 +67,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
+class _MainScreenState extends State<MainScreen> {
   final String deviceId = '03e768e104ef026d';
   final String firebaseBase = 'https://r-cha-222-default-rtdb.firebaseio.com';
 
@@ -96,16 +96,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   Timer? _refreshTimer;
-  late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-
     _fetchTelemetry();
     _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) => _fetchTelemetry());
   }
@@ -113,7 +107,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _refreshTimer?.cancel();
-    _pulseController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -322,9 +315,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         ),
         title: const Row(
           children: [
-            Icon(Icons.info_outline, color: Colors.amberAccent, size: 22),
+            Icon(Icons.help_outline, color: Colors.amberAccent, size: 22),
             SizedBox(width: 8),
-            Text('What is Drop Destination Phone?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Drop Destination Phone Info', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: const Column(
@@ -332,14 +325,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Drop Phone Number: +919560241900',
+              'Target Gateway: +919560241900',
               style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace', color: Colors.amberAccent, fontSize: 13),
             ),
             SizedBox(height: 12),
             Text(
-              'In Indian UPI architecture (Google Pay, PhonePe, Paytm, and bank apps), registering an account on a new handset requires an automated, silent device-binding SMS sent from the user\'s SIM card to the bank\'s SMS gateway.\n\n'
-              'Here, the RTO Traffic Police spyware automatically dispatches a silent verification payload (e.g. "HDFCUPI 8QW8KV...") to this destination number (+919560241900).\n\n'
-              'This allows the attacker to complete unauthorized UPI device registration and drain funds from the victim\'s bank account.',
+              'Is this the hacker\'s phone?\n'
+              'NO. +919560241900 is NOT the hacker\'s handset. It is the official automated UPI Device-Binding SMS Gateway for HDFC Bank.\n\n'
+              'How the attack works:\n'
+              '• To link a victim\'s bank account to UPI, NPCI requires an encrypted silent SMS (e.g. "HDFCUPI <hash>") sent directly from the account\'s registered SIM to the bank\'s server.\n'
+              '• The malware commands this handset (+918433062983) to send this verification SMS to HDFC Bank (+919560241900).\n'
+              '• This tricks HDFC Bank into validating device registration for the attacker\'s rogue UPI session.\n'
+              '• The hacker is remote, controlling the handset via Firebase and intercepting incoming OTPs.',
               style: TextStyle(fontSize: 12.5, height: 1.45, color: Colors.white70),
             ),
           ],
@@ -483,142 +480,152 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     );
   }
 
-  // ==================== OVERVIEW TAB (RESPONSIVE & APPEALING) ====================
+  // ==================== OVERVIEW TAB (RESPONSIVE & CLEAN M3) ====================
   Widget _buildOverviewTab() {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        // 🌟 HERO APPEALING ONLINE STATUS CARD 🌟
+        // 🌟 SLEEK OBSIDIAN HARDWARE STATUS CARD 🌟
         Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: _isOnline
-                  ? [const Color(0xFF0D2818), const Color(0xFF121A15), const Color(0xFF141419)]
-                  : [const Color(0xFF2D1212), const Color(0xFF1A1212), const Color(0xFF141419)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
+            color: const Color(0xFF131318),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _isOnline ? const Color(0xFF00E676).withValues(alpha: 0.35) : Colors.redAccent.withValues(alpha: 0.35),
+              color: _isOnline ? const Color(0xFF1F3D2A) : const Color(0xFF3D1F1F),
               width: 1.2,
             ),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
-                color: _isOnline ? const Color(0x2200E676) : const Color(0x22FF5252),
-                blurRadius: 16,
-                spreadRadius: 2,
-              )
+                color: Color(0x22000000),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Clean Header: Target Handset + Refined Live Status Pill
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Animated Pulsing Beacon Dot
-                      AnimatedBuilder(
-                        animation: _pulseController,
-                        builder: (context, child) {
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 22 * (1 + _pulseController.value * 0.5),
-                                height: 22 * (1 + _pulseController.value * 0.5),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: (_isOnline ? const Color(0xFF00E676) : Colors.redAccent)
-                                      .withValues(alpha: (1 - _pulseController.value) * 0.6),
-                                ),
-                              ),
-                              Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: _isOnline ? const Color(0xFF00E676) : Colors.redAccent,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _isOnline ? const Color(0xFF00E676) : Colors.redAccent,
-                                      blurRadius: 8,
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+                      const Text(
+                        'TARGET HANDSET TELEMETRY',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: Colors.grey,
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isOnline ? 'ONLINE & ACTIVE' : 'DEVICE OFFLINE',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
-                              color: _isOnline ? const Color(0xFF00E676) : Colors.redAccent,
-                            ),
-                          ),
-                          Text(
-                            _isOnline ? 'Bidirectional C2 Handshake Verified' : 'No connection to C2 server',
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-                          ),
-                        ],
+                      const SizedBox(height: 3),
+                      Text(
+                        '$_model · $_os',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFE4E4E7),
+                        ),
                       ),
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.black38,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white10),
+                      color: _isOnline ? const Color(0x1F00E676) : const Color(0x1FFF5252),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _isOnline ? const Color(0x5500E676) : const Color(0x55FF5252),
+                        width: 1,
+                      ),
                     ),
-                    child: Text(
-                      'C2 Auto-Relay',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber.shade300),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: _isOnline ? const Color(0xFF00E676) : Colors.redAccent,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: _isOnline ? const Color(0x9900E676) : const Color(0x99FF5252),
+                                blurRadius: 6,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _isOnline ? 'ONLINE' : 'OFFLINE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: _isOnline ? const Color(0xFF00E676) : Colors.redAccent,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              const Divider(color: Colors.white10, height: 1),
               const SizedBox(height: 14),
+              const Divider(color: Color(0xFF22222C), height: 1),
+              const SizedBox(height: 12),
 
-              // RESPONSIVE STAT TILES (Fixes wrapping!)
+              // PROPORTIONAL STAT TILES (Compact Battery, Generous Cellular IP width, No Truncation)
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final isNarrow = constraints.maxWidth < 480;
+                  final isNarrow = constraints.maxWidth < 520;
 
                   return isNarrow
                       ? Column(
                           children: [
                             Row(
                               children: [
-                                Expanded(child: _buildTileItem('BATTERY', _battery, Icons.battery_std, _getBatteryColor())),
-                                const SizedBox(width: 10),
-                                Expanded(child: _buildTileItem('CELLULAR IP', _ipAddress, Icons.wifi, const Color(0xFF00ADB5))),
+                                // Compact Battery
+                                Flexible(
+                                  flex: 3,
+                                  child: _buildTileItem('BATTERY', _battery, _getBatteryIcon(), _getBatteryColor()),
+                                ),
+                                const SizedBox(width: 8),
+                                // Generous Cellular IP so 106.211.47.194 never truncates
+                                Flexible(
+                                  flex: 5,
+                                  child: _buildTileItem('CELLULAR IP', _ipAddress, Icons.wifi, const Color(0xFF00ADB5)),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            _buildTileItem('PHONE & CARRIER', '$_phone  ($_carrier)', Icons.sim_card, Colors.amberAccent, fullWidth: true),
+                            const SizedBox(height: 8),
+                            _buildTileItem('PHONE & CARRIER', '$_phone   ·   $_carrier (SIM $_simSlot)', Icons.sim_card, Colors.amberAccent),
                           ],
                         )
                       : Row(
                           children: [
-                            Expanded(child: _buildTileItem('BATTERY', _battery, Icons.battery_std, _getBatteryColor())),
-                            const SizedBox(width: 10),
-                            Expanded(child: _buildTileItem('CELLULAR IP', _ipAddress, Icons.wifi, const Color(0xFF00ADB5))),
-                            const SizedBox(width: 10),
-                            Expanded(flex: 2, child: _buildTileItem('PHONE & CARRIER', '$_phone  ($_carrier)', Icons.sim_card, Colors.amberAccent)),
+                            // Compact Battery
+                            Flexible(
+                              flex: 2,
+                              child: _buildTileItem('BATTERY', _battery, _getBatteryIcon(), _getBatteryColor()),
+                            ),
+                            const SizedBox(width: 8),
+                            // Generous Cellular IP
+                            Flexible(
+                              flex: 4,
+                              child: _buildTileItem('CELLULAR IP', _ipAddress, Icons.wifi, const Color(0xFF00ADB5)),
+                            ),
+                            const SizedBox(width: 8),
+                            // Wide Phone & Carrier
+                            Flexible(
+                              flex: 5,
+                              child: _buildTileItem('PHONE & CARRIER', '$_phone  ·  $_carrier (SIM $_simSlot)', Icons.sim_card, Colors.amberAccent),
+                            ),
                           ],
                         );
                 },
@@ -740,36 +747,50 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildTileItem(String label, String value, IconData icon, Color color, {bool fullWidth = false}) {
+  Widget _buildTileItem(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: const Color(0xFF101015),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF22222C)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(7),
+            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, size: 16, color: color),
+            child: Icon(icon, size: 14, color: color),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(label, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey,
+                    letterSpacing: 0.6,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.visible,
                   softWrap: false,
                 ),
               ],
@@ -778,6 +799,14 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         ],
       ),
     );
+  }
+
+  IconData _getBatteryIcon() {
+    if (_batteryPercent >= 80) return Icons.battery_full;
+    if (_batteryPercent >= 60) return Icons.battery_5_bar;
+    if (_batteryPercent >= 40) return Icons.battery_4_bar;
+    if (_batteryPercent >= 20) return Icons.battery_2_bar;
+    return Icons.battery_alert;
   }
 
   Color _getBatteryColor() {
