@@ -56,8 +56,8 @@ jobs:
 
       - name: Publish Flutter Web to flutter-web branch
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "chandranshB"
+          git config --global user.email "chandranshB@users.noreply.github.com"
           cd build/web
           git init -b flutter-web
           git add -A
