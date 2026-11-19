@@ -35,7 +35,7 @@ class HackerTrackerApp extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 2,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: const Color(0xFF18181C),
           elevation: 0,
           shape: RoundedRectangleBorder(

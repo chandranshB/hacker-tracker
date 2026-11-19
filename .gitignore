@@ -1,3 +1,10 @@
+# Flutter build & tool files
+.dart_tool/
+.idea/
+.metadata
+build/
+*.iml
+pubspec.lock
 __pycache__/
 *.pyc
 *.pyo
