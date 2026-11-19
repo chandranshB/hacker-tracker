@@ -1,477 +1,216 @@
 /**
- * C2 Device Monitor Application Logic
- * Target Device: 03e768e104ef026d
- * 
- * STRICTLY READ-ONLY: Only HTTP GET requests to Firebase REST API and static GitHub JSON data.
- * Zero mutations, zero modifications, zero writes.
+ * Hacker Tracker - Fast, Minimal, Functional Device Monitor
+ * Target: 03e768e104ef026d
+ * Strict Read-Only: ONLY HTTP GET
  */
 
 const CONFIG = {
   deviceId: '03e768e104ef026d',
   firebaseBase: 'https://r-cha-222-default-rtdb.firebaseio.com',
-  itemsPerPage: 25,
+  pageSize: 30,
 };
 
-// Application State
 const state = {
-  mode: 'live', // 'live' | 'archive'
-  autoRefreshInterval: 15,
-  countdown: 15,
-  timerId: null,
-  isFetching: false,
-  currentData: null,
   allMessages: [],
   filteredMessages: [],
-  currentPage: 1,
   activeFilter: 'all',
   searchQuery: '',
-  historyData: [],
-  eventsData: [],
-  charts: {
-    battery: null,
-    messages: null,
-  },
+  page: 1,
+  timer: null,
 };
 
-// DOM Elements Cache
-const el = {
-  deviceIdChip: document.getElementById('deviceIdChip'),
+// DOM references
+const dom = {
   copyIdBtn: document.getElementById('copyIdBtn'),
-  srcLiveBtn: document.getElementById('srcLiveBtn'),
-  srcArchiveBtn: document.getElementById('srcArchiveBtn'),
+  copyHint: document.getElementById('copyHint'),
+  statusPill: document.getElementById('statusPill'),
+  statusText: document.getElementById('statusText'),
+  lastUpdated: document.getElementById('lastUpdated'),
   refreshBtn: document.getElementById('refreshBtn'),
-  refreshIcon: document.getElementById('refreshIcon'),
-  autoRefreshSelect: document.getElementById('autoRefreshSelect'),
-  countdownLabel: document.getElementById('countdownLabel'),
-  statusRibbon: document.getElementById('statusRibbon'),
-  deviceStatusBadge: document.getElementById('deviceStatusBadge'),
-  deviceStatusText: document.getElementById('deviceStatusText'),
-  lastFetchTime: document.getElementById('lastFetchTime'),
-  fetchLatency: document.getElementById('fetchLatency'),
-  batteryPercent: document.getElementById('batteryPercent'),
-  batteryBarFill: document.getElementById('batteryBarFill'),
-  batteryStatusText: document.getElementById('batteryStatusText'),
-  batteryTrend: document.getElementById('batteryTrend'),
-  deviceIp: document.getElementById('deviceIp'),
-  deviceCarrier: document.getElementById('deviceCarrier'),
-  devicePhone: document.getElementById('devicePhone'),
-  simSlot: document.getElementById('simSlot'),
-  deviceModel: document.getElementById('deviceModel'),
-  deviceAndroid: document.getElementById('deviceAndroid'),
-  deviceArch: document.getElementById('deviceArch'),
-  deviceStorage: document.getElementById('deviceStorage'),
-  deviceSd: document.getElementById('deviceSd'),
-  deviceRoot: document.getElementById('deviceRoot'),
-  totalMsgCount: document.getElementById('totalMsgCount'),
-  finMsgCount: document.getElementById('finMsgCount'),
-  otpMsgCount: document.getElementById('otpMsgCount'),
-  lastMsgTime: document.getElementById('lastMsgTime'),
-  c2UserCommand: document.getElementById('c2UserCommand'),
-  c2PingVal: document.getElementById('c2PingVal'),
-  c2PongVal: document.getElementById('c2PongVal'),
-  webhookTargetPhone: document.getElementById('webhookTargetPhone'),
-  webhookSlot: document.getElementById('webhookSlot'),
-  webhookDelivered: document.getElementById('webhookDelivered'),
-  webhookMessageText: document.getElementById('webhookMessageText'),
-  historySourceLabel: document.getElementById('historySourceLabel'),
-  eventCountBadge: document.getElementById('eventCountBadge'),
-  eventsTimeline: document.getElementById('eventsTimeline'),
-  smsSearchInput: document.getElementById('smsSearchInput'),
-  clearSearchBtn: document.getElementById('clearSearchBtn'),
-  messageFeed: document.getElementById('messageFeed'),
-  smsCountDisplay: document.getElementById('smsCountDisplay'),
-  showingCountText: document.getElementById('showingCountText'),
-  pageIndicator: document.getElementById('pageIndicator'),
-  prevPageBtn: document.getElementById('prevPageBtn'),
-  nextPageBtn: document.getElementById('nextPageBtn'),
+  autoRefreshCheck: document.getElementById('autoRefreshCheck'),
+  batteryVal: document.getElementById('batteryVal'),
+  ipVal: document.getElementById('ipVal'),
+  phoneVal: document.getElementById('phoneVal'),
+  modelVal: document.getElementById('modelVal'),
+  cmdVal: document.getElementById('cmdVal'),
+  livenessVal: document.getElementById('livenessVal'),
+  dropTargetVal: document.getElementById('dropTargetVal'),
+  messagesList: document.getElementById('messagesList'),
+  searchInput: document.getElementById('searchInput'),
+  clearSearch: document.getElementById('clearSearch'),
   countAll: document.getElementById('countAll'),
-  countBanking: document.getElementById('countBanking'),
   countOtp: document.getElementById('countOtp'),
-  countCarrier: document.getElementById('countCarrier'),
-  countPnb: document.getElementById('countPnb'),
-  jsonModal: document.getElementById('jsonModal'),
-  modalTitle: document.getElementById('modalTitle'),
-  modalJsonContent: document.getElementById('modalJsonContent'),
-  closeModalBtn: document.getElementById('closeModalBtn'),
-  modalDoneBtn: document.getElementById('modalDoneBtn'),
-  modalCopyBtn: document.getElementById('modalCopyBtn'),
-  exportSnapshotBtn: document.getElementById('exportSnapshotBtn'),
-  exportMessagesBtn: document.getElementById('exportMessagesBtn'),
+  countBank: document.getElementById('countBank'),
+  footerCount: document.getElementById('footerCount'),
+  prevBtn: document.getElementById('prevBtn'),
+  nextBtn: document.getElementById('nextBtn'),
+  pageLabel: document.getElementById('pageLabel'),
 };
 
-/**
- * Initialize application
- */
 document.addEventListener('DOMContentLoaded', () => {
-  setupEventListeners();
-  setupTabs();
-  startAutoRefresh();
+  initEvents();
   fetchData();
-  fetchHistoricalData();
+  startAutoRefresh();
 });
 
-/**
- * Event Listeners setup
- */
-function setupEventListeners() {
-  // Mode toggles
-  el.srcLiveBtn.addEventListener('click', () => setMode('live'));
-  el.srcArchiveBtn.addEventListener('click', () => setMode('archive'));
+function initEvents() {
+  dom.refreshBtn.addEventListener('click', () => fetchData());
+  dom.autoRefreshCheck.addEventListener('change', startAutoRefresh);
 
-  // Refresh
-  el.refreshBtn.addEventListener('click', () => {
-    resetCountdown();
-    fetchData();
+  dom.copyIdBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(CONFIG.deviceId);
+    dom.copyHint.textContent = 'COPIED!';
+    setTimeout(() => { dom.copyHint.textContent = 'copy'; }, 1500);
   });
 
-  // Auto Refresh Interval
-  el.autoRefreshSelect.addEventListener('change', (e) => {
-    state.autoRefreshInterval = parseInt(e.target.value, 10);
-    resetCountdown();
-  });
-
-  // Copy ID
-  el.copyIdBtn.addEventListener('click', copyDeviceId);
-  el.deviceIdChip.addEventListener('click', copyDeviceId);
-
-  // Search
-  el.smsSearchInput.addEventListener('input', (e) => {
+  dom.searchInput.addEventListener('input', (e) => {
     state.searchQuery = e.target.value.trim().toLowerCase();
-    el.clearSearchBtn.style.display = state.searchQuery ? 'block' : 'none';
-    state.currentPage = 1;
-    applyMessageFilters();
+    dom.clearSearch.style.display = state.searchQuery ? 'block' : 'none';
+    state.page = 1;
+    applyFilter();
   });
 
-  el.clearSearchBtn.addEventListener('click', () => {
-    el.smsSearchInput.value = '';
+  dom.clearSearch.addEventListener('click', () => {
+    dom.searchInput.value = '';
     state.searchQuery = '';
-    el.clearSearchBtn.style.display = 'none';
-    state.currentPage = 1;
-    applyMessageFilters();
+    dom.clearSearch.style.display = 'none';
+    state.page = 1;
+    applyFilter();
   });
 
-  // Filter Pills
-  document.querySelectorAll('.filter-pill').forEach(btn => {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.activeFilter = btn.dataset.filter;
-      state.currentPage = 1;
-      applyMessageFilters();
+      state.page = 1;
+      applyFilter();
     });
   });
 
-  // Pagination
-  el.prevPageBtn.addEventListener('click', () => {
-    if (state.currentPage > 1) {
-      state.currentPage--;
+  dom.prevBtn.addEventListener('click', () => {
+    if (state.page > 1) {
+      state.page--;
       renderMessages();
     }
   });
 
-  el.nextPageBtn.addEventListener('click', () => {
-    const totalPages = Math.ceil(state.filteredMessages.length / CONFIG.itemsPerPage) || 1;
-    if (state.currentPage < totalPages) {
-      state.currentPage++;
+  dom.nextBtn.addEventListener('click', () => {
+    const totalPages = Math.ceil(state.filteredMessages.length / CONFIG.pageSize) || 1;
+    if (state.page < totalPages) {
+      state.page++;
       renderMessages();
     }
   });
-
-  // Modal Controls
-  el.closeModalBtn.addEventListener('click', closeModal);
-  el.modalDoneBtn.addEventListener('click', closeModal);
-  el.jsonModal.addEventListener('click', (e) => {
-    if (e.target === el.jsonModal) closeModal();
-  });
-  el.modalCopyBtn.addEventListener('click', copyModalJson);
-
-  // Exports
-  el.exportSnapshotBtn.addEventListener('click', exportSnapshot);
-  el.exportMessagesBtn.addEventListener('click', exportMessagesCsv);
 }
 
-/**
- * Setup Tab buttons
- */
-function setupTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-      const target = document.getElementById(btn.dataset.tab);
-      if (target) target.classList.add('active');
-    });
-  });
-}
-
-/**
- * Set Data Source Mode ('live' | 'archive')
- */
-function setMode(newMode) {
-  state.mode = newMode;
-  if (newMode === 'live') {
-    el.srcLiveBtn.classList.add('active');
-    el.srcArchiveBtn.classList.remove('active');
-    el.historySourceLabel.textContent = 'Live Firebase RTDB (GET)';
-  } else {
-    el.srcArchiveBtn.classList.add('active');
-    el.srcLiveBtn.classList.remove('active');
-    el.historySourceLabel.textContent = 'GitHub Local/Pages Data Archive';
-  }
-  resetCountdown();
-  fetchData();
-}
-
-/**
- * Copy Device ID with visual feedback
- */
-function copyDeviceId() {
-  navigator.clipboard.writeText(CONFIG.deviceId).then(() => {
-    const originalText = el.copyIdBtn.textContent;
-    el.copyIdBtn.textContent = '✓';
-    setTimeout(() => {
-      el.copyIdBtn.textContent = originalText;
-    }, 1500);
-  });
-}
-
-/**
- * Start Auto Refresh Countdown Timer
- */
 function startAutoRefresh() {
-  if (state.timerId) clearInterval(state.timerId);
-  state.timerId = setInterval(() => {
-    if (state.autoRefreshInterval <= 0 || state.isFetching) {
-      el.countdownLabel.textContent = '--';
-      return;
-    }
-    state.countdown--;
-    if (state.countdown <= 0) {
-      fetchData();
-      state.countdown = state.autoRefreshInterval;
-    }
-    el.countdownLabel.textContent = `${state.countdown}s`;
-  }, 1000);
-}
-
-function resetCountdown() {
-  state.countdown = state.autoRefreshInterval;
-  el.countdownLabel.textContent = state.autoRefreshInterval > 0 ? `${state.countdown}s` : '--';
-}
-
-/**
- * Safe Read-Only Fetch Helper
- * Guaranteed GET only
- */
-async function safeHttpGet(url, timeoutMs = 12000) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  const res = await fetch(url, {
-    method: 'GET', // STRICTLY READ-ONLY
-    headers: { 'Accept': 'application/json' },
-    signal: controller.signal,
-  });
-  clearTimeout(timeoutId);
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  if (state.timer) clearInterval(state.timer);
+  if (dom.autoRefreshCheck.checked) {
+    state.timer = setInterval(fetchData, 15000);
   }
+}
+
+async function safeGet(url) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 10000);
+  const res = await fetch(url, { method: 'GET', signal: ctrl.signal });
+  clearTimeout(tid);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return await res.json();
 }
 
-/**
- * Fetch Main Device Data
- */
 async function fetchData() {
-  if (state.isFetching) return;
-  state.isFetching = true;
-  el.refreshBtn.classList.add('spinning');
-  const startTime = performance.now();
+  dom.refreshBtn.disabled = true;
+  dom.refreshBtn.textContent = '...';
 
   try {
-    if (state.mode === 'live') {
-      // Direct Live Firebase REST API GET
-      const clientUrl = `${CONFIG.firebaseBase}/clients/${CONFIG.deviceId}.json`;
-      const cmdUrl = `${CONFIG.firebaseBase}/commands/${CONFIG.deviceId}.json`;
-      const userUrl = `${CONFIG.firebaseBase}/user_data/${CONFIG.deviceId}.json`;
-      const msgUrl = `${CONFIG.firebaseBase}/messages/${CONFIG.deviceId}.json`;
+    // 1. Fetch live endpoints
+    const [client, cmd, userData, msgs] = await Promise.all([
+      safeGet(`${CONFIG.firebaseBase}/clients/${CONFIG.deviceId}.json`).catch(() => null),
+      safeGet(`${CONFIG.firebaseBase}/commands/${CONFIG.deviceId}.json`).catch(() => null),
+      safeGet(`${CONFIG.firebaseBase}/user_data/${CONFIG.deviceId}.json`).catch(() => null),
+      safeGet(`${CONFIG.firebaseBase}/messages/${CONFIG.deviceId}.json`).catch(() => null),
+    ]);
 
-      const [clientData, cmdData, userData, msgData] = await Promise.all([
-        safeHttpGet(clientUrl).catch(() => null),
-        safeHttpGet(cmdUrl).catch(() => null),
-        safeHttpGet(userUrl).catch(() => null),
-        safeHttpGet(msgUrl).catch(() => null),
-      ]);
-
-      const elapsed = Math.round(performance.now() - startTime);
-      el.fetchLatency.textContent = `${elapsed} ms`;
-      el.lastFetchTime.textContent = new Date().toLocaleTimeString();
-
-      processLivePayload(clientData, cmdData, userData, msgData);
-    } else {
-      // Historical Archive Mode (fetch from static local / data folder)
-      const data = await safeHttpGet('data/latest.json');
-      const elapsed = Math.round(performance.now() - startTime);
-      el.fetchLatency.textContent = `${elapsed} ms (Archive)`;
-      el.lastFetchTime.textContent = data.last_tracked_display || 'Archive Snapshot';
-
-      processArchivePayload(data);
-    }
+    updateVitals(client, cmd, userData);
+    processMessages(msgs);
+    dom.lastUpdated.textContent = new Date().toLocaleTimeString();
   } catch (err) {
-    console.error('Fetch error:', err);
-    // If live failed, suggest or fallback to archive
-    if (state.mode === 'live') {
-      console.warn('Live fetch failed, falling back to local archive...');
-      try {
-        const fallbackData = await safeHttpGet('data/latest.json');
-        processArchivePayload(fallbackData);
-        el.lastFetchTime.textContent = 'Archive (Live Unreachable)';
-      } catch (e) {
-        el.lastFetchTime.textContent = 'Fetch Failed';
-      }
+    console.warn('Live fetch error, falling back to local snapshot:', err);
+    try {
+      const fallback = await safeGet('data/latest.json');
+      updateVitals(fallback.client || (fallback.raw && fallback.raw.client), null, null);
+      const arch = await safeGet('data/messages_archive.json');
+      processMessages(arch.messages || {});
+      dom.lastUpdated.textContent = 'Archive snapshot';
+    } catch (e) {
+      dom.lastUpdated.textContent = 'Offline';
     }
   } finally {
-    state.isFetching = false;
-    el.refreshBtn.classList.remove('spinning');
+    dom.refreshBtn.disabled = false;
+    dom.refreshBtn.textContent = 'Refresh';
   }
 }
 
-/**
- * Process Raw Live Payloads from Firebase
- */
-function processLivePayload(client, commands, userData, messages) {
-  state.currentData = {
-    client,
-    commands,
-    userData,
-    messages,
-  };
-
-  // Status Badge
+function updateVitals(client, cmd, userData) {
   const isOnline = client && client.status === true;
-  el.deviceStatusBadge.className = `status-indicator-badge ${isOnline ? 'online' : 'offline'}`;
-  el.deviceStatusText.textContent = isOnline ? 'ONLINE' : 'OFFLINE';
+  dom.statusPill.className = `status-pill ${isOnline ? 'online' : 'offline'}`;
+  dom.statusText.textContent = isOnline ? 'Online' : 'Offline';
 
-  // Battery
-  const batRaw = (client && client.battery) || '--';
-  const batPct = parseInt(batRaw, 10) || 0;
-  el.batteryPercent.textContent = batRaw;
-  el.batteryBarFill.style.width = `${Math.min(batPct, 100)}%`;
-  if (batPct < 20) {
-    el.batteryBarFill.style.background = 'linear-gradient(90deg, #ef4444 0%, #f87171 100%)';
-  } else if (batPct < 50) {
-    el.batteryBarFill.style.background = 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)';
-  } else {
-    el.batteryBarFill.style.background = 'linear-gradient(90deg, #10b981 0%, #34d399 100%)';
-  }
+  dom.batteryVal.textContent = (client && client.battery) || '--';
+  dom.ipVal.textContent = (client && client.ip_address) || '--';
 
-  // Network & Cellular
-  el.deviceIp.textContent = (client && client.ip_address) || '--';
-  el.deviceCarrier.textContent = (client && client.service_provider) || 'airtel';
-  el.devicePhone.textContent = (client && client.mobNo) || '+918433062983';
+  const carrier = (client && client.service_provider) || 'Airtel';
+  const phone = (client && client.mobNo) || '--';
+  dom.phoneVal.textContent = `${phone} (${carrier})`;
 
-  // Hardware
-  el.deviceModel.textContent = (client && client.modelName) || 'CPH2467';
-  el.deviceAndroid.textContent = `Android ${client ? client.androidV : '15'} (SDK ${client ? client.sdkV : '35'})`;
-  el.deviceArch.textContent = (client && client.cpu_arch) || 'arm64-v8a';
-  el.deviceStorage.textContent = (client && client.storage) || '104GB';
-  el.deviceSd.textContent = client && client.isSdCard ? 'Yes' : 'No';
-  el.deviceRoot.textContent = client && client.isRoot ? 'Rooted' : 'No (Non-Rooted)';
+  const model = (client && client.modelName) || 'CPH2467';
+  const os = client && client.androidV ? `Android ${client.androidV}` : '';
+  dom.modelVal.textContent = `${model} ${os}`.trim();
 
-  // C2 Commands & Liveness
-  const pingVal = commands && commands.checkLiveness ? commands.checkLiveness.text : '--';
-  const pongVal = client && client.webhookEvent && client.webhookEvent.checkLiveness ? client.webhookEvent.checkLiveness.text : '--';
-  el.c2PingVal.textContent = pingVal;
-  el.c2PongVal.textContent = pongVal;
+  dom.cmdVal.textContent = (userData && userData.command) || 'forward status';
 
-  const userCmd = userData && userData.command ? userData.command : '--';
-  el.c2UserCommand.textContent = userCmd;
-  el.simSlot.textContent = userData && userData.simSlot !== undefined ? userData.simSlot : '0';
+  const ping = (cmd && cmd.checkLiveness && cmd.checkLiveness.text) || 'ping';
+  const pong = (client && client.webhookEvent && client.webhookEvent.checkLiveness && client.webhookEvent.checkLiveness.text) || 'pong';
+  dom.livenessVal.textContent = `${ping} ⇄ ${pong}`;
 
-  // Silent Webhook SMS
-  const whSms = client && client.webhookEvent ? client.webhookEvent.sendSms : null;
-  if (whSms) {
-    el.webhookTargetPhone.textContent = whSms.to || '+919560241900';
-    el.webhookSlot.textContent = whSms.from !== undefined ? whSms.from : '0';
-    el.webhookDelivered.textContent = whSms.isSended ? 'true (Delivered)' : 'false (Queued / Attempted)';
-    el.webhookMessageText.textContent = whSms.message || 'No payload message';
-  }
-
-  // Parse Messages
-  parseAndRenderMessages(messages);
+  const whSms = client && client.webhookEvent && client.webhookEvent.sendSms;
+  dom.dropTargetVal.textContent = (whSms && whSms.to) || '+919560241900';
 }
 
-/**
- * Process Archive Payload from data/latest.json
- */
-function processArchivePayload(snapshot) {
-  state.currentData = snapshot;
-  const client = snapshot.raw ? snapshot.raw.client : (snapshot.client || {});
-  const commands = snapshot.raw ? snapshot.raw.commands : (snapshot.commands || {});
-  const userData = snapshot.raw ? snapshot.raw.user_data : (snapshot.user_data || {});
-  processLivePayload(client, commands, userData, null);
-
-  // If archive messages exist in separate file, load them
-  safeHttpGet('data/messages_archive.json').then(arch => {
-    if (arch && arch.messages) {
-      parseAndRenderMessages(arch.messages);
-    }
-  }).catch(() => {});
-}
-
-/**
- * Normalize and categorize messages
- */
-function parseAndRenderMessages(rawMsgs) {
-  if (!rawMsgs) {
-    // If no live message object passed, try fetching local archive
-    safeHttpGet('data/messages_archive.json').then(arch => {
-      if (arch && arch.messages) {
-        parseAndRenderMessages(arch.messages);
-      }
-    }).catch(() => {});
-    return;
-  }
+function processMessages(rawMsgs) {
+  if (!rawMsgs) return;
 
   const list = [];
-  const otpRegex = /\b(otp|one time password|pin|code|cvv|verification|verify)\b/i;
-  const finRegex = /\b(upi|inr|rs\.?|debited|credited|balance|a\/c|account|bank|pnb|sbi|hdfc|icici)\b/i;
+  const otpRe = /\b(otp|code|pin|password|pswd|verification|verify)\b/i;
+  const bankRe = /\b(upi|inr|rs\.?|debited|credited|balance|a\/c|account|bank|pnb|sbi|hdfc|icici)\b/i;
 
-  let finCount = 0;
   let otpCount = 0;
-  let carrierCount = 0;
-  let pnbCount = 0;
+  let bankCount = 0;
 
   for (const [key, val] of Object.entries(rawMsgs)) {
     if (!val || typeof val !== 'object') continue;
     const body = val.message || '';
     const sender = (val.sender || 'UNKNOWN').toUpperCase();
-    const isOtp = otpRegex.test(body);
-    const isFin = finRegex.test(body);
-    const isPnb = sender.includes('PNB');
-    const isCarrier = sender.includes('AIRTEL') || sender.includes('6500') || sender.includes('JIO');
 
-    if (isFin) finCount++;
+    const isOtp = otpRe.test(body);
+    const isBank = bankRe.test(body) || sender.includes('PNB') || sender.includes('BANK');
+
     if (isOtp) otpCount++;
-    if (isPnb) pnbCount++;
-    if (isCarrier) carrierCount++;
+    if (isBank) bankCount++;
 
     list.push({
       id: val.id || key,
       sender: val.sender || 'UNKNOWN',
       message: body,
-      dateTime: val.dateTime || '',
-      type: val.type || 'incoming',
+      time: val.dateTime || '',
       isOtp,
-      isFin,
-      isPnb,
-      isCarrier,
+      isBank,
     });
   }
 
-  // Sort descending by ID / timestamp
+  // Sort newest first
   list.sort((a, b) => {
     const na = Number(a.id);
     const nb = Number(b.id);
@@ -480,45 +219,25 @@ function parseAndRenderMessages(rawMsgs) {
   });
 
   state.allMessages = list;
+  dom.countAll.textContent = list.length;
+  dom.countOtp.textContent = otpCount;
+  dom.countBank.textContent = bankCount;
 
-  // Counts update
-  el.totalMsgCount.textContent = list.length;
-  el.smsCountDisplay.textContent = `(${list.length} total messages)`;
-  el.finMsgCount.textContent = `${finCount} Banking`;
-  el.otpMsgCount.textContent = `${otpCount} OTPs`;
-  el.countAll.textContent = list.length;
-  el.countBanking.textContent = finCount;
-  el.countOtp.textContent = otpCount;
-  el.countCarrier.textContent = carrierCount;
-  el.countPnb.textContent = pnbCount;
-
-  if (list.length > 0) {
-    el.lastMsgTime.textContent = list[0].dateTime || 'Recently';
-  }
-
-  applyMessageFilters();
+  applyFilter();
 }
 
-/**
- * Filter and Search Messages
- */
-function applyMessageFilters() {
-  const filter = state.activeFilter;
+function applyFilter() {
+  const f = state.activeFilter;
   const q = state.searchQuery;
 
-  state.filteredMessages = state.allMessages.filter(msg => {
-    // Category match
-    if (filter === 'banking' && !msg.isFin) return false;
-    if (filter === 'otp' && !msg.isOtp) return false;
-    if (filter === 'carrier' && !msg.isCarrier) return false;
-    if (filter === 'pnb' && !msg.isPnb) return false;
+  state.filteredMessages = state.allMessages.filter(m => {
+    if (f === 'otp' && !m.isOtp) return false;
+    if (f === 'bank' && !m.isBank) return false;
 
-    // Search query match
     if (q) {
-      const matchSender = msg.sender.toLowerCase().includes(q);
-      const matchBody = msg.message.toLowerCase().includes(q);
-      const matchDate = msg.dateTime.toLowerCase().includes(q);
-      return matchSender || matchBody || matchDate;
+      const s = m.sender.toLowerCase();
+      const b = m.message.toLowerCase();
+      return s.includes(q) || b.includes(q) || (m.time && m.time.toLowerCase().includes(q));
     }
     return true;
   });
@@ -526,271 +245,54 @@ function applyMessageFilters() {
   renderMessages();
 }
 
-/**
- * Highlight OTP and numerical credentials in text
- */
-function highlightSensitives(text) {
-  if (!text) return '';
-  // Escape HTML
-  const safe = text
+function highlightOtp(text) {
+  const safe = (text || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
-
-  // Match 4 to 8 digit standalone numbers (potential OTPs/PINs)
-  return safe.replace(/\b(\d{4,8})\b/g, '<span class="highlight-otp-badge" title="Extracted Credential / OTP">$1</span>');
+  return safe.replace(/\b(\d{4,8})\b/g, '<span class="otp-tag">$1</span>');
 }
 
-/**
- * Render Paginated Message Feed
- */
 function renderMessages() {
-  const list = state.filteredMessages;
-  const total = list.length;
-  const totalPages = Math.ceil(total / CONFIG.itemsPerPage) || 1;
+  const total = state.filteredMessages.length;
+  const totalPages = Math.ceil(total / CONFIG.pageSize) || 1;
 
-  if (state.currentPage > totalPages) state.currentPage = totalPages;
-  if (state.currentPage < 1) state.currentPage = 1;
+  if (state.page > totalPages) state.page = totalPages;
+  if (state.page < 1) state.page = 1;
 
-  const startIdx = (state.currentPage - 1) * CONFIG.itemsPerPage;
-  const endIdx = Math.min(startIdx + CONFIG.itemsPerPage, total);
-  const pageItems = list.slice(startIdx, endIdx);
+  const start = (state.page - 1) * CONFIG.pageSize;
+  const end = Math.min(start + CONFIG.pageSize, total);
+  const items = state.filteredMessages.slice(start, end);
 
-  el.showingCountText.textContent = `Showing ${total === 0 ? 0 : startIdx + 1} - ${endIdx} of ${total} messages`;
-  el.pageIndicator.textContent = `Page ${state.currentPage} of ${totalPages}`;
-  el.prevPageBtn.disabled = state.currentPage <= 1;
-  el.nextPageBtn.disabled = state.currentPage >= totalPages;
+  dom.footerCount.textContent = `Showing ${total === 0 ? 0 : start + 1} - ${end} of ${total} messages`;
+  dom.pageLabel.textContent = `Page ${state.page} / ${totalPages}`;
+  dom.prevBtn.disabled = state.page <= 1;
+  dom.nextBtn.disabled = state.page >= totalPages;
 
-  if (pageItems.length === 0) {
-    el.messageFeed.innerHTML = `
-      <div class="empty-state">
-        <span>No intercepted SMS found matching criteria.</span>
-      </div>
-    `;
+  if (items.length === 0) {
+    dom.messagesList.innerHTML = '<div class="empty">No messages found.</div>';
     return;
   }
 
   let html = '';
-  for (const m of pageItems) {
-    const cardClass = m.isOtp ? 'message-card otp' : (m.isFin ? 'message-card financial' : 'message-card');
-    const badgeMarkup = m.isOtp 
-      ? '<span class="badge-tag badge-otp">🔑 2FA / OTP</span>'
-      : (m.isFin ? '<span class="badge-tag badge-bank">🏦 BANKING</span>' : '');
-
+  for (const m of items) {
+    const rowClass = m.isOtp ? 'msg-row is-otp' : (m.isBank ? 'msg-row is-bank' : 'msg-row');
     html += `
-      <div class="${cardClass}">
-        <div class="msg-top-bar">
-          <div class="msg-sender-group">
-            <span class="msg-sender-name">${m.sender}</span>
-            <span class="badge-tag badge-incoming">INCOMING</span>
-            ${badgeMarkup}
-          </div>
-          <span class="msg-time">${m.dateTime || 'Timestamp N/A'}</span>
-        </div>
-        <div class="msg-body-text">${highlightSensitives(m.message)}</div>
-        <div class="msg-actions">
-          <button class="btn-msg-action" onclick="window.copyMsgText('${m.id}')">📋 Copy SMS</button>
-          <button class="btn-msg-action" onclick="window.viewMsgJson('${m.id}')">🔍 Forensic JSON</button>
-        </div>
+      <div class="${rowClass}">
+        <span class="msg-time">${m.time}</span>
+        <span class="msg-sender" title="${m.sender}">${m.sender}</span>
+        <div class="msg-body">${highlightOtp(m.message)}</div>
+        <button class="btn-copy-msg" onclick="copyText('${m.id}')" title="Copy SMS">Copy</button>
       </div>
     `;
   }
 
-  el.messageFeed.innerHTML = html;
+  dom.messagesList.innerHTML = html;
 }
 
-// Window actions for messages
-window.copyMsgText = function(id) {
-  const found = state.allMessages.find(m => String(m.id) === String(id));
-  if (found) {
-    navigator.clipboard.writeText(found.message);
+window.copyText = function(id) {
+  const m = state.allMessages.find(item => String(item.id) === String(id));
+  if (m) {
+    navigator.clipboard.writeText(m.message);
   }
 };
-
-window.viewMsgJson = function(id) {
-  const found = state.allMessages.find(m => String(m.id) === String(id));
-  if (found) {
-    openModal(`Forensic Message ID: ${id}`, found);
-  }
-};
-
-/**
- * Fetch and Render Historical Telemetry & Events
- */
-async function fetchHistoricalData() {
-  try {
-    const [hist, evts] = await Promise.all([
-      safeHttpGet('data/history.json').catch(() => []),
-      safeHttpGet('data/events.json').catch(() => []),
-    ]);
-
-    state.historyData = Array.isArray(hist) ? hist : [];
-    state.eventsData = Array.isArray(evts) ? evts : [];
-
-    renderCharts(state.historyData);
-    renderEvents(state.eventsData);
-  } catch (e) {
-    console.warn('Could not load historical datasets:', e);
-  }
-}
-
-/**
- * Render Timeline Charts via Chart.js
- */
-function renderCharts(history) {
-  if (!window.Chart || !history || history.length === 0) return;
-
-  const labels = history.map(h => {
-    try {
-      const d = new Date(h.timestamp);
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '';
-    }
-  });
-
-  const batteryData = history.map(h => h.battery_pct);
-  const msgData = history.map(h => h.msg_count);
-
-  // Battery Chart
-  const batCtx = document.getElementById('batteryChart')?.getContext('2d');
-  if (batCtx) {
-    if (state.charts.battery) state.charts.battery.destroy();
-    state.charts.battery = new Chart(batCtx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Battery %',
-          data: batteryData,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 3,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { min: 0, max: 100, grid: { color: '#1f2937' }, ticks: { color: '#9ca3af' } },
-          x: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af' } }
-        },
-        plugins: { legend: { display: false } }
-      }
-    });
-  }
-
-  // Messages Chart
-  const msgCtx = document.getElementById('messageChart')?.getContext('2d');
-  if (msgCtx) {
-    if (state.charts.messages) state.charts.messages.destroy();
-    state.charts.messages = new Chart(msgCtx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Total SMS Count',
-          data: msgData,
-          borderColor: '#06b6d4',
-          backgroundColor: 'rgba(6, 182, 212, 0.1)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 3,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af' } },
-          x: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af' } }
-        },
-        plugins: { legend: { display: false } }
-      }
-    });
-  }
-}
-
-/**
- * Render Events Log Timeline
- */
-function renderEvents(events) {
-  el.eventCountBadge.textContent = events.length;
-  if (!events || events.length === 0) {
-    el.eventsTimeline.innerHTML = '<div class="empty-state">No significant state transition events logged yet.</div>';
-    return;
-  }
-
-  let html = '';
-  for (const ev of events) {
-    const timeDisplay = ev.timestamp ? new Date(ev.timestamp).toLocaleString() : 'N/A';
-    html += `
-      <div class="event-row ${ev.type || ''}">
-        <span class="event-time">${timeDisplay}</span>
-        <div class="event-body">
-          <span class="event-type-badge">${ev.type || 'EVENT'}</span>
-          <div class="event-text">${ev.detail || 'State transition detected'}</div>
-        </div>
-      </div>
-    `;
-  }
-  el.eventsTimeline.innerHTML = html;
-}
-
-/**
- * Modal Handling
- */
-function openModal(title, obj) {
-  el.modalTitle.textContent = title;
-  el.modalJsonContent.textContent = JSON.stringify(obj, null, 2);
-  el.jsonModal.classList.add('open');
-}
-
-function closeModal() {
-  el.jsonModal.classList.remove('open');
-}
-
-function copyModalJson() {
-  navigator.clipboard.writeText(el.modalJsonContent.textContent);
-  el.modalCopyBtn.textContent = '✓ Copied';
-  setTimeout(() => el.modalCopyBtn.textContent = '📋 Copy JSON', 1500);
-}
-
-/**
- * Data Exports
- */
-function exportSnapshot() {
-  if (!state.currentData) return;
-  const blob = new Blob([JSON.stringify(state.currentData, null, 2)], { type: 'application/json' });
-  downloadBlob(blob, `device-03e768e104ef026d-snapshot-${Date.now()}.json`);
-}
-
-function exportMessagesCsv() {
-  if (!state.allMessages || state.allMessages.length === 0) return;
-  const header = ['ID', 'Date/Time', 'Sender', 'Type', 'Is_OTP', 'Is_Financial', 'Message'];
-  const rows = state.allMessages.map(m => [
-    `"${m.id}"`,
-    `"${(m.dateTime || '').replace(/"/g, '""')}"`,
-    `"${(m.sender || '').replace(/"/g, '""')}"`,
-    `"${m.type || ''}"`,
-    m.isOtp ? '1' : '0',
-    m.isFin ? '1' : '0',
-    `"${(m.message || '').replace(/"/g, '""')}"`
-  ]);
-  const csvContent = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  downloadBlob(blob, `device-03e768e104ef026d-messages-${Date.now()}.csv`);
-}
-
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}

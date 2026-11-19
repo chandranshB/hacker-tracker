@@ -3,327 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>C2 Device Monitor | 03e768e104ef026d</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2'><circle cx='12' cy='12' r='10'/><path d='M12 6v6l4 2'/></svg>">
-  
-  <!-- Inter & JetBrains Mono Fonts -->
+  <title>Hacker Tracker · 03e768e104ef026d</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-layout">
-    <!-- Top Navigation / Header -->
-    <header class="top-nav">
-      <div class="nav-left">
-        <div class="logo-group">
-          <div class="radar-ping">
-            <span class="beacon-pulse" id="beaconPulse"></span>
-            <span class="beacon-dot" id="beaconDot"></span>
-          </div>
-          <div class="logo-text">
-            <span class="brand-title">C2 TELEMETRY MONITOR</span>
-            <span class="brand-sub">DEVICE INTELLIGENCE & FORENSIC SURVEILLANCE</span>
-          </div>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="logo">Hacker Tracker</h1>
+        <div class="device-id-badge" id="copyIdBtn" title="Click to copy device ID">
+          <code>03e768e104ef026d</code>
+          <span class="copy-hint" id="copyHint">copy</span>
         </div>
-
-        <div class="device-badge-wrap">
-          <span class="badge-label">TARGET ID</span>
-          <code class="device-id-chip" id="deviceIdChip" title="Click to copy device ID">03e768e104ef026d</code>
-          <button class="btn-copy-chip" id="copyIdBtn" title="Copy Device ID">📋</button>
+        <div class="status-pill online" id="statusPill">
+          <span class="dot"></span>
+          <span id="statusText">Online</span>
         </div>
       </div>
 
-      <div class="nav-right">
-        <!-- Safety Protocol Pill -->
-        <div class="safe-badge" title="Guaranteed read-only HTTP GET polling. Zero writes or mutations to Firebase.">
-          <span class="lock-icon">🔒</span>
-          <span>SAFE READ-ONLY</span>
-        </div>
-
-        <!-- Data Source Switcher -->
-        <div class="source-selector">
-          <button class="source-btn active" id="srcLiveBtn" title="Direct real-time HTTP GET to Firebase REST API">
-            <span class="dot live-dot"></span> Live Firebase
-          </button>
-          <button class="source-btn" id="srcArchiveBtn" title="Load historical records tracked by GitHub Actions">
-            <span class="dot archive-dot"></span> GitHub Archive
-          </button>
-        </div>
-
-        <!-- Refresh Controls -->
-        <div class="refresh-controls">
-          <button class="btn-refresh" id="refreshBtn">
-            <span class="refresh-icon" id="refreshIcon">↻</span> Refresh
-          </button>
-          <select id="autoRefreshSelect" class="select-refresh" title="Auto-refresh interval">
-            <option value="0">Auto: OFF</option>
-            <option value="15" selected>Auto: 15s</option>
-            <option value="30">Auto: 30s</option>
-            <option value="60">Auto: 60s</option>
-          </select>
-          <span class="timer-countdown" id="countdownLabel" title="Seconds until next auto-fetch">15s</span>
-        </div>
+      <div class="header-right">
+        <span class="meta-item">Updated: <strong id="lastUpdated">--</strong></span>
+        <button class="btn btn-secondary" id="refreshBtn">Refresh</button>
+        <label class="auto-refresh-label">
+          <input type="checkbox" id="autoRefreshCheck" checked> Auto (15s)
+        </label>
       </div>
     </header>
 
-    <!-- Main Content Container -->
-    <main class="main-content">
-      <!-- Status Bar / Alert Ribbon -->
-      <section class="status-ribbon" id="statusRibbon">
-        <div class="ribbon-status">
-          <span class="status-indicator-badge online" id="deviceStatusBadge">
-            <span class="status-dot"></span> <span id="deviceStatusText">ONLINE</span>
-          </span>
-          <span class="ribbon-role">Role: <strong>C2 Auto-Relay Gateway & SMS Interceptor</strong></span>
-          <span class="ribbon-sep">•</span>
-          <span class="ribbon-time">Last Fetch: <strong id="lastFetchTime">Just now</strong></span>
-          <span class="ribbon-sep">•</span>
-          <span class="ribbon-latency">Latency: <span id="fetchLatency">-- ms</span></span>
-        </div>
-        <div class="ribbon-actions">
-          <button class="btn-subtle" id="exportSnapshotBtn">📥 Export Snapshot (.JSON)</button>
-          <button class="btn-subtle" id="exportMessagesBtn">📊 Export SMS (.CSV)</button>
-        </div>
-      </section>
+    <!-- Quick Stats Bar -->
+    <section class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-label">Battery</span>
+        <span class="stat-value" id="batteryVal">--%</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">IP Address</span>
+        <span class="stat-value font-mono" id="ipVal">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Phone & SIM</span>
+        <span class="stat-value font-mono" id="phoneVal">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Model / OS</span>
+        <span class="stat-value" id="modelVal">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">C2 Command</span>
+        <span class="stat-value font-mono" id="cmdVal">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Liveness</span>
+        <span class="stat-value font-mono text-green" id="livenessVal">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Drop Target</span>
+        <span class="stat-value font-mono text-amber" id="dropTargetVal">--</span>
+      </div>
+    </section>
 
-      <!-- Vitals Metric Cards Grid -->
-      <section class="vitals-grid">
-        <!-- Card 1: Battery -->
-        <div class="vital-card">
-          <div class="card-header">
-            <span class="card-label">BATTERY LEVEL</span>
-            <span class="card-icon" id="batteryIcon">🔋</span>
-          </div>
-          <div class="card-value-group">
-            <div class="card-large-val" id="batteryPercent">--%</div>
-            <div class="battery-bar-container">
-              <div class="battery-bar-fill" id="batteryBarFill" style="width: 0%;"></div>
-            </div>
-          </div>
-          <div class="card-sub-info">
-            <span id="batteryStatusText">Normal Operation</span>
-            <span class="trend-tag" id="batteryTrend">Stable</span>
-          </div>
-        </div>
-
-        <!-- Card 2: Network & SIM -->
-        <div class="vital-card">
-          <div class="card-header">
-            <span class="card-label">NETWORK & CELLULAR</span>
-            <span class="card-icon">📶</span>
-          </div>
-          <div class="card-value-group">
-            <div class="card-medium-val code-font" id="deviceIp">--</div>
-            <div class="sub-line">
-              <span class="pill-tag carrier-tag" id="deviceCarrier">Airtel</span>
-              <span class="pill-tag phone-tag" id="devicePhone">+91 --</span>
-            </div>
-          </div>
-          <div class="card-sub-info">
-            <span>Location: <strong>Aligarh / UP Corridor</strong></span>
-            <span>SIM Slot: <strong id="simSlot">0</strong></span>
-          </div>
+    <!-- Message Stream -->
+    <main class="main">
+      <div class="toolbar">
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all">All (<span id="countAll">0</span>)</button>
+          <button class="filter-btn" data-filter="otp">🔑 OTPs & Codes (<span id="countOtp">0</span>)</button>
+          <button class="filter-btn" data-filter="bank">🏦 Bank / UPI (<span id="countBank">0</span>)</button>
         </div>
 
-        <!-- Card 3: Hardware Profile -->
-        <div class="vital-card">
-          <div class="card-header">
-            <span class="card-label">DEVICE HARDWARE</span>
-            <span class="card-icon">📱</span>
-          </div>
-          <div class="card-value-group">
-            <div class="card-medium-val" id="deviceModel">CPH2467</div>
-            <div class="sub-line">
-              <span class="pill-tag os-tag" id="deviceAndroid">Android 15 (SDK 35)</span>
-              <span class="pill-tag arch-tag" id="deviceArch">arm64-v8a</span>
-            </div>
-          </div>
-          <div class="card-sub-info">
-            <span>Storage: <strong id="deviceStorage">104GB</strong> (SD Card: <strong id="deviceSd">Yes</strong>)</span>
-            <span>Root: <strong id="deviceRoot" class="text-safe">No (Non-Rooted)</strong></span>
-          </div>
+        <div class="search-wrap">
+          <input type="text" id="searchInput" placeholder="Search message, sender, OTP...">
+          <button id="clearSearch" class="btn-clear">✕</button>
         </div>
+      </div>
 
-        <!-- Card 4: Intercepted Messages Count -->
-        <div class="vital-card">
-          <div class="card-header">
-            <span class="card-label">INTERCEPTED SMS INBOX</span>
-            <span class="card-icon">📩</span>
-          </div>
-          <div class="card-value-group">
-            <div class="card-large-val highlight-cyan" id="totalMsgCount">--</div>
-            <div class="sub-line">
-              <span class="pill-tag fin-tag" id="finMsgCount">-- Banking</span>
-              <span class="pill-tag otp-tag" id="otpMsgCount">-- OTPs</span>
-            </div>
-          </div>
-          <div class="card-sub-info">
-            <span>Latest: <strong id="lastMsgTime">--</strong></span>
-            <span class="text-warning">Direction: Incoming</span>
-          </div>
-        </div>
-      </section>
+      <!-- Messages Table / List -->
+      <div class="messages-container" id="messagesList">
+        <div class="empty">Loading messages...</div>
+      </div>
 
-      <!-- C2 Command & Telemetry Breakdown -->
-      <section class="section-container c2-panel">
-        <div class="section-title-bar">
-          <h3>⚡ C2 COMMAND EXECUTION & LIVENESS TELEMETRY</h3>
-          <span class="section-subtitle">Real-time status of controller relay commands, ping/pong health, and automated webhook relays</span>
-        </div>
-
-        <div class="c2-grid">
-          <!-- Item 1: Active User Command -->
-          <div class="c2-cell">
-            <div class="c2-cell-label">ACTIVE C2 USER COMMAND</div>
-            <div class="c2-cell-val code-font" id="c2UserCommand">forward status</div>
-            <div class="c2-cell-meta">Source: <code>/user_data/03e768e104ef026d/command</code></div>
-          </div>
-
-          <!-- Item 2: Liveness Handshake -->
-          <div class="c2-cell">
-            <div class="c2-cell-label">LIVENESS HANDSHAKE</div>
-            <div class="c2-handshake-status">
-              <span class="handshake-node">Ping: <code id="c2PingVal">ping_magic_scan</code></span>
-              <span class="handshake-arrow">⇄</span>
-              <span class="handshake-node">Pong: <code class="text-success" id="c2PongVal">pong</code></span>
-            </div>
-            <div class="c2-cell-meta">Handshake State: <span class="badge-verified">ACTIVE & RESPONDING</span></div>
-          </div>
-
-          <!-- Item 3: Silent SMS Relay Webhook -->
-          <div class="c2-cell c2-cell-wide">
-            <div class="c2-cell-label">SILENT SMS DISPATCH PAYLOAD (WEBHOOK EVENT)</div>
-            <div class="sms-webhook-box">
-              <div class="sms-target-line">
-                <span>Destination Drop: <code class="target-drop-num" id="webhookTargetPhone">+919560241900</code></span>
-                <span>Relay Slot: <code id="webhookSlot">0</code></span>
-                <span>Delivered: <code class="text-warning" id="webhookDelivered">false (Queued)</code></span>
-              </div>
-              <div class="sms-payload-code code-font" id="webhookMessageText">
-                HDFCUPI 8QW8KV9WFP1ilqlxfqBmG3tc6amohgyEdZwZ53iu0Fbk5pdH%2Flgty8MZURhCMBye
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Charts & Timeline Section -->
-      <section class="section-container charts-section">
-        <div class="charts-header">
-          <div class="tabs-group">
-            <button class="tab-btn active" data-tab="analyticsTab">📈 Telemetry Analytics</button>
-            <button class="tab-btn" data-tab="eventsTab">📜 Significant Events Log (<span id="eventCountBadge">0</span>)</button>
-          </div>
-          <div class="chart-meta-info" id="historySourceMeta">
-            Loaded from: <span id="historySourceLabel">GitHub History Archive</span>
-          </div>
-        </div>
-
-        <div class="tab-content active" id="analyticsTab">
-          <div class="charts-grid">
-            <div class="chart-box">
-              <div class="chart-box-title">Battery Level Timeline (%)</div>
-              <div class="chart-canvas-wrap">
-                <canvas id="batteryChart"></canvas>
-              </div>
-            </div>
-            <div class="chart-box">
-              <div class="chart-box-title">Message Influx & Activity</div>
-              <div class="chart-canvas-wrap">
-                <canvas id="messageChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="tab-content" id="eventsTab">
-          <div class="events-timeline" id="eventsTimeline">
-            <div class="empty-state">Loading historical events...</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Intercepted Messages Live Feed & Filter -->
-      <section class="section-container messages-section">
-        <div class="messages-header">
-          <div class="messages-header-left">
-            <h3>📥 LIVE INTERCEPTED SMS INBOX</h3>
-            <span class="sms-total-counter" id="smsCountDisplay">(613 total messages)</span>
-          </div>
-
-          <div class="messages-header-right">
-            <!-- Search Input -->
-            <div class="search-box-wrap">
-              <span class="search-icon">🔍</span>
-              <input type="text" id="smsSearchInput" class="search-input" placeholder="Search sender, bank, OTP, keyword, or text...">
-              <button class="btn-clear-search" id="clearSearchBtn">✕</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Filter Pills Bar -->
-        <div class="filter-pills-bar">
-          <button class="filter-pill active" data-filter="all">All Messages (<span id="countAll">--</span>)</button>
-          <button class="filter-pill" data-filter="banking">🚨 Banking & Financial (<span id="countBanking">--</span>)</button>
-          <button class="filter-pill" data-filter="otp">🔑 OTPs & 2FA (<span id="countOtp">--</span>)</button>
-          <button class="filter-pill" data-filter="carrier">📶 Airtel / Carrier (<span id="countCarrier">--</span>)</button>
-          <button class="filter-pill" data-filter="pnb">🏦 Punjab National Bank (<span id="countPnb">--</span>)</button>
-        </div>
-
-        <!-- Message List Container -->
-        <div class="message-feed-container" id="messageFeed">
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <span>Fetching messages for device 03e768e104ef026d...</span>
-          </div>
-        </div>
-
-        <!-- Pagination / Count Footer -->
-        <div class="feed-footer">
-          <span id="showingCountText">Showing 0 of 0 messages</span>
-          <div class="pagination-buttons">
-            <button class="btn-page" id="prevPageBtn" disabled>← Previous</button>
-            <span class="page-indicator" id="pageIndicator">Page 1</span>
-            <button class="btn-page" id="nextPageBtn">Next →</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Raw Forensic Details Drawer / Modal -->
-      <div class="modal-overlay" id="jsonModal">
-        <div class="modal-dialog">
-          <div class="modal-header">
-            <h4 id="modalTitle">Forensic JSON Detail</h4>
-            <button class="btn-close-modal" id="closeModalBtn">✕</button>
-          </div>
-          <div class="modal-body">
-            <pre class="json-code-viewer" id="modalJsonContent"></pre>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-subtle" id="modalCopyBtn">📋 Copy JSON</button>
-            <button class="btn-primary" id="modalDoneBtn">Done</button>
-          </div>
+      <div class="footer-bar">
+        <span id="footerCount">Showing 0 messages</span>
+        <div class="pagination">
+          <button class="btn btn-secondary btn-sm" id="prevBtn" disabled>Previous</button>
+          <span class="page-num" id="pageLabel">Page 1</span>
+          <button class="btn btn-secondary btn-sm" id="nextBtn">Next</button>
         </div>
       </div>
     </main>
-
-    <!-- Footer -->
-    <footer class="app-footer">
-      <div class="footer-left">
-        <span>Target: <code>03e768e104ef026d</code> | Operator Handset: <code>+918433062983</code></span>
-      </div>
-      <div class="footer-right">
-        <span>GitHub Actions Scheduled Tracker: <code>.github/workflows/track-device.yml</code> (Every 30 mins)</span>
-        <span class="footer-sep">•</span>
-        <span class="safe-tag">STRICT READ-ONLY GET</span>
-      </div>
-    </footer>
   </div>
 
   <script src="app.js"></script>
