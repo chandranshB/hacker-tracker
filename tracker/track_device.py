@@ -335,26 +335,18 @@ def main():
         "command": active_command,
     }
 
-    # Dedup check: avoid bloat if completely unchanged within 1 hour
+    # Ensure regular 30-minute time-series logging for battery graph
     should_append_history = True
     if history:
         last = history[-1]
-        same_state = (
-            last.get("battery_raw") == battery_raw
-            and last.get("ip") == current_ip
-            and last.get("status") == bool(current_status)
-            and last.get("msg_count") == len(processed_msgs)
-            and last.get("command") == active_command
-            and last.get("liveness_pong") == liveness_pong
-        )
-        if same_state:
-            try:
-                last_time = datetime.fromisoformat(last["timestamp"])
-                hours_diff = (now_utc - last_time).total_seconds() / 3600.0
-                if hours_diff < 1.0:
-                    should_append_history = False
-            except Exception:
-                pass
+        try:
+            last_time = datetime.fromisoformat(last["timestamp"])
+            mins_diff = (now_utc - last_time).total_seconds() / 60.0
+            # If less than 20 minutes have passed AND battery hasn't changed, skip to avoid duplicates
+            if mins_diff < 20.0 and last.get("battery_pct") == battery_pct:
+                should_append_history = False
+        except Exception:
+            pass
 
     if should_append_history:
         history.append(history_entry)
