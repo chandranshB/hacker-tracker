@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
@@ -42,15 +44,26 @@ jobs:
         run: |
           flutter pub get
 
-      - name: Build Flutter Web
+      - name: Build Flutter Web (Base Href for Cloudflare and GitHub Pages)
         run: |
-          flutter build web --release --base-href /hacker-tracker/
+          flutter build web --release --base-href /
           cp -r data build/web/data || true
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
+
+      - name: Publish Flutter Web to flutter-web branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cd build/web
+          git init -b flutter-web
+          git add -A
+          git commit -m "build(flutter): release web build [skip ci]"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push -f origin flutter-web
 
   deploy-pages:
     needs: build-and-deploy
