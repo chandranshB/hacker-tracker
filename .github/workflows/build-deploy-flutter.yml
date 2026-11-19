@@ -44,24 +44,33 @@ jobs:
         run: |
           flutter pub get
 
-      - name: Build Flutter Web (Base Href for Cloudflare and GitHub Pages)
+      - name: Build for GitHub Pages (/hacker-tracker/)
+        run: |
+          flutter build web --release --base-href /hacker-tracker/
+          mkdir -p build/gh-pages
+          cp -r build/web/* build/gh-pages/
+          cp -r data build/gh-pages/data || true
+
+      - name: Build for Cloudflare Pages (/)
         run: |
           flutter build web --release --base-href /
-          cp -r data build/web/data || true
+          mkdir -p build/cloudflare
+          cp -r build/web/* build/cloudflare/
+          cp -r data build/cloudflare/data || true
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: build/gh-pages
 
-      - name: Publish Flutter Web to flutter-web branch
+      - name: Publish Cloudflare Web to flutter-web branch
         run: |
           git config --global user.name "chandranshB"
           git config --global user.email "chandranshB@users.noreply.github.com"
-          cd build/web
+          cd build/cloudflare
           git init -b flutter-web
           git add -A
-          git commit -m "build(flutter): release web build [skip ci]"
+          git commit -m "build(flutter): release web build for cloudflare [skip ci]"
           git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git push -f origin flutter-web
 

