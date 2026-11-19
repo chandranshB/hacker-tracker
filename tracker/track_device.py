@@ -20,7 +20,8 @@ import urllib.error
 # Device & Endpoint configuration
 DEVICE_ID = "03e768e104ef026d"
 FIREBASE_BASE = "https://r-cha-222-default-rtdb.firebaseio.com"
-USER_AGENT = "C2-DeviceTracker/1.0 (Audit-Safe-ReadOnly; Device=03e768e104ef026d)"
+# Standard mobile client user agent that blends in with normal Android device traffic
+USER_AGENT = "Mozilla/5.0 (Linux; Android 15; CPH2467 Build/UKQ1.230924.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent

