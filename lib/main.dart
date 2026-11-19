@@ -1487,7 +1487,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // ==================== TIMELINE TAB (24H BATTERY GRAPH & POWER MILESTONES) ====================
+  // ==================== TIMELINE TAB (24H BATTERY GRAPH ONLY) ====================
   Widget _buildTimelineTab() {
     int high = 85;
     int low = _batteryPercent;
@@ -1516,60 +1516,36 @@ class _MainScreenState extends State<MainScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const Text(
+                    '24-HOUR BATTERY DRAIN TELEMETRY',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
                     children: [
-                      const Text(
-                        '24-HOUR BATTERY DRAIN TELEMETRY',
+                      Text(
+                        '$_batteryPercent%',
                         style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                          color: Colors.grey,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'monospace',
+                          color: _getBatteryColor(),
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          Text(
-                            '$_batteryPercent%',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              fontFamily: 'monospace',
-                              color: _getBatteryColor(),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '(-$drain% in 24h)',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      Text(
+                        '(-$drain% in 24h)',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600),
                       ),
                     ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1B1B24),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF2C2C3A)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.schedule, size: 12, color: Color(0xFF00ADB5)),
-                        SizedBox(width: 5),
-                        Text(
-                          '30-Min Ledger',
-                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF00ADB5)),
-                        ),
-                      ],
-                    ),
                   ),
                 ],
               ),
@@ -1599,68 +1575,16 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _buildMiniStatTile('DRAIN RATE', '~1.4%/hr', Icons.trending_down, Colors.amberAccent),
+                    child: _buildMiniStatTile('24H DRAIN', '-$drain%', Icons.battery_alert, Colors.orangeAccent),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _buildMiniStatTile('INTERVAL', '30 Mins', Icons.update, const Color(0xFF00ADB5)),
+                    child: _buildMiniStatTile('DRAIN RATE', '~1.4%/hr', Icons.trending_down, Colors.amberAccent),
                   ),
                 ],
               ),
             ],
           ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // 🔋 OBSERVED POWER & STATE MILESTONES (Replaced redundant SMS duplicates)
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'OBSERVED BATTERY & POWER MILESTONES',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8),
-              ),
-              Text(
-                'Power Telemetry',
-                style: TextStyle(fontSize: 10, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 6),
-
-        _buildTimelineItem(
-          '19 Nov 2026 20:08 IST',
-          'ACTIVE_DRAIN',
-          'Battery currently at 42% (Airtel IP 106.211.47.194, 30-min ledger logging active).',
-          Colors.amberAccent,
-        ),
-        _buildTimelineItem(
-          '19 Nov 2026 16:49 IST',
-          'CHARGER_UNPLUGGED',
-          'Handset unplugged from charger and discharging off power (74% ➔ 71%).',
-          Colors.orangeAccent,
-        ),
-        _buildTimelineItem(
-          '19 Nov 2026 10:10 IST',
-          'FORENSIC_CAPTURE',
-          'Handset recorded at 89% full battery at initial database dump capture.',
-          const Color(0xFF00ADB5),
-        ),
-        _buildTimelineItem(
-          '19 Nov 2026 (Earlier)',
-          'RECONNECTED_TO_POWER',
-          'Logged in forensic records: reconnected to charger (recharged 44% ➔ 89%).',
-          const Color(0xFF00E676),
-        ),
-        _buildTimelineItem(
-          '26 Sep 2026 07:53 AM',
-          'DEVICE_JOINED',
-          'Handset $deviceId first compromised and linked to C2 database.',
-          Colors.blueAccent,
         ),
       ],
     );
@@ -1693,40 +1617,6 @@ class _MainScreenState extends State<MainScreen> {
             style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTimelineItem(String time, String type, String desc, Color color) {
-    String formattedTime = time;
-    try {
-      final dt = DateTime.parse(time).toLocal();
-      formattedTime = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } catch (_) {}
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Chip(
-                  label: Text(type, style: TextStyle(fontSize: 9.0, fontWeight: FontWeight.bold, color: color)),
-                  backgroundColor: color.withValues(alpha: 0.12),
-                  padding: EdgeInsets.zero,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                Text(formattedTime, style: const TextStyle(fontSize: 10.5, color: Colors.grey, fontFamily: 'monospace')),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFFE4E4E7))),
-          ],
-        ),
       ),
     );
   }
