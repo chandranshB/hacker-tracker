@@ -12,3 +12,6 @@ __pycache__/
 *.tmp
 .DS_Store
 Thumbs.db
+
+# Wrangler / Cloudflare
+.wrangler/
