@@ -548,5 +548,16 @@
     "liveness_ping": "ping_magic_scan",
     "liveness_pong": "pong",
     "command": "forward status"
+  },
+  {
+    "timestamp": "2026-11-19T19:34:30.719813+00:00",
+    "battery_pct": 30,
+    "battery_raw": "30%",
+    "ip": "106.211.47.194",
+    "status": false,
+    "msg_count": 616,
+    "liveness_ping": "ping_magic_scan",
+    "liveness_pong": "pong",
+    "command": "forward status"
   }
 ]
