@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, Icons, Material;
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -539,9 +538,14 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: avatarColor,
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: avatarColor,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
               child: Text(
                 shortInitials,
                 style: const TextStyle(color: CupertinoColors.white, fontWeight: FontWeight.bold, fontSize: 12),
