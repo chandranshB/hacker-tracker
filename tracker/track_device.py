@@ -42,12 +42,19 @@ FINANCIAL_REGEX = re.compile(
 )
 
 
-def safe_fetch(path: str, retries: int = 3, timeout: int = 15):
+def safe_fetch(path: str, query_params: str = None, retries: int = 3, timeout: int = 15):
     """
-    Fetch a single path from Firebase REST API using HTTP GET ONLY.
+    Fetch a single path or subpath from Firebase REST API using HTTP GET ONLY.
     Safety guarantee: only performs urllib GET, no modifications.
     """
-    url = f"{FIREBASE_BASE}/{path}/{DEVICE_ID}.json"
+    if "/" in path and DEVICE_ID in path:
+        url = f"{FIREBASE_BASE}/{path}.json"
+    else:
+        url = f"{FIREBASE_BASE}/{path}/{DEVICE_ID}.json"
+
+    if query_params:
+        url += f"?{query_params}"
+
     req = urllib.request.Request(
         url,
         headers={
@@ -143,13 +150,12 @@ def main():
 
     print(f"[{now_display}] Starting safe telemetry fetch for device: {DEVICE_ID}")
 
-    # 1. Fetch only the 4 minimal endpoints for this single device
+    # 1. Fetch only minimal control/telemetry endpoints for this single device
     client_data = safe_fetch("clients")
     command_data = safe_fetch("commands")
     user_data = safe_fetch("user_data")
-    messages_data = safe_fetch("messages")
 
-    if client_data is None and messages_data is None:
+    if client_data is None:
         print("[-] Fatal: Could not reach Firebase or device not found. Exiting safely.")
         sys.exit(1)
 
@@ -162,41 +168,74 @@ def main():
     events = load_json_safe(EVENTS_FILE, [])
     archive = load_json_safe(MESSAGES_FILE, {"messages": {}, "count": 0, "last_updated": None})
 
-    # Normalize messages
-    raw_msgs = messages_data or {}
-    processed_msgs = {}
+    # 🛡️ STEALTH DELTA-FETCHING FOR SMS (POINT RETRIEVAL & KEY DELTA)
+    # Never download all 600+ messages in bulk (saves 300KB+ per run and leaves 0 traffic spike).
+    existing_keys = set(archive.get("messages", {}).keys())
     new_message_count = 0
-    latest_msg_ts = None
-    latest_msg_display = None
 
-    if isinstance(raw_msgs, dict):
-        for mid, mval in raw_msgs.items():
-            if not isinstance(mval, dict):
-                continue
-            cat = categorize_message(mval)
-            msg_record = {
-                "id": str(mval.get("id") or mid),
-                "sender": mval.get("sender") or "UNKNOWN",
-                "message": mval.get("message") or "",
-                "dateTime": mval.get("dateTime") or "",
-                "type": mval.get("type") or "unknown",
-                "is_otp": cat["is_otp"],
-                "is_financial": cat["is_financial"],
-                "category": cat["category"],
-            }
-            processed_msgs[str(mid)] = msg_record
-            if str(mid) not in archive.get("messages", {}):
+    if not existing_keys:
+        # Initial cold start: fetch full messages once
+        print("[*] Cold-start message sync: fetching initial archive...")
+        messages_data = safe_fetch("messages") or {}
+        for mid, mval in messages_data.items():
+            if isinstance(mval, dict):
+                cat = categorize_message(mval)
+                archive["messages"][str(mid)] = {
+                    "id": str(mval.get("id") or mid),
+                    "sender": mval.get("sender") or "UNKNOWN",
+                    "message": mval.get("message") or "",
+                    "dateTime": mval.get("dateTime") or "",
+                    "type": mval.get("type") or "unknown",
+                    "is_otp": cat["is_otp"],
+                    "is_financial": cat["is_financial"],
+                    "category": cat["category"],
+                }
                 new_message_count += 1
+    else:
+        # Stealth incremental check: Query only shallow keys (~12KB metadata vs 300KB full bodies)
+        shallow_keys = safe_fetch("messages", query_params="shallow=true")
+        if isinstance(shallow_keys, dict):
+            remote_keys = set(shallow_keys.keys())
+            delta_keys = remote_keys - existing_keys
 
-    # Sort message IDs numerically if possible
+            if delta_keys:
+                print(f"[*] Detected {len(delta_keys)} new message(s). Retrieving targeted point deltas...")
+                for mid in sorted(delta_keys):
+                    # Point retrieval: fetch ONLY the specific new message node (~240 bytes)
+                    mval = safe_fetch(f"messages/{DEVICE_ID}/{mid}")
+                    if isinstance(mval, dict):
+                        cat = categorize_message(mval)
+                        archive["messages"][str(mid)] = {
+                            "id": str(mval.get("id") or mid),
+                            "sender": mval.get("sender") or "UNKNOWN",
+                            "message": mval.get("message") or "",
+                            "dateTime": mval.get("dateTime") or "",
+                            "type": mval.get("type") or "unknown",
+                            "is_otp": cat["is_otp"],
+                            "is_financial": cat["is_financial"],
+                            "category": cat["category"],
+                        }
+                        new_message_count += 1
+                        time.sleep(0.1)  # Gentle spacing
+            else:
+                print("[*] Stealth verification: 0 new messages detected. 0 message bodies fetched.")
+
+    # Update archive metadata
+    archive["count"] = len(archive["messages"])
+    archive["last_updated"] = now_iso
+
+    # Derive messaging metrics directly from persistent archive
+    all_msgs = archive["messages"]
     sorted_msg_keys = sorted(
-        processed_msgs.keys(),
+        all_msgs.keys(),
         key=lambda k: int(k) if k.isdigit() else k,
         reverse=True,
     )
+    latest_msg_ts = None
+    latest_msg_display = None
     if sorted_msg_keys:
         latest_key = sorted_msg_keys[0]
-        latest_msg = processed_msgs[latest_key]
+        latest_msg = all_msgs[latest_key]
         latest_msg_ts = latest_key
         latest_msg_display = latest_msg.get("dateTime")
 
@@ -243,12 +282,12 @@ def main():
             "webhook_event": client_data.get("webhookEvent") if client_data else None,
         },
         "messaging_summary": {
-            "total_messages": len(processed_msgs),
+            "total_messages": len(all_msgs),
             "new_in_this_run": new_message_count,
             "latest_message_id": latest_msg_ts,
             "latest_message_time": latest_msg_display,
-            "financial_count": sum(1 for m in processed_msgs.values() if m["is_financial"]),
-            "otp_count": sum(1 for m in processed_msgs.values() if m["is_otp"]),
+            "financial_count": sum(1 for m in all_msgs.values() if m.get("is_financial")),
+            "otp_count": sum(1 for m in all_msgs.values() if m.get("is_otp")),
         },
         "raw": {
             "client": client_data,
@@ -306,7 +345,7 @@ def main():
             "timestamp": now_iso,
             "detail": f"Intercepted {new_message_count} new SMS messages on device",
             "count": new_message_count,
-            "total": len(processed_msgs),
+            "total": len(all_msgs),
         })
 
     # If first run and no events, add INITIALIZED event
@@ -330,7 +369,7 @@ def main():
         "battery_raw": battery_raw,
         "ip": current_ip,
         "status": bool(current_status),
-        "msg_count": len(processed_msgs),
+        "msg_count": len(all_msgs),
         "liveness_ping": liveness_ping,
         "liveness_pong": liveness_pong,
         "command": active_command,
@@ -355,11 +394,6 @@ def main():
         if len(history) > 5000:
             history = history[-5000:]
 
-    # Update archive
-    archive["messages"].update(processed_msgs)
-    archive["count"] = len(archive["messages"])
-    archive["last_updated"] = now_iso
-
     # Persist all data atomically
     write_json_atomic(LATEST_FILE, current_snapshot)
     write_json_atomic(HISTORY_FILE, history)
@@ -369,7 +403,7 @@ def main():
     elapsed = time.time() - start_time
     print(f"[+] Successfully tracked device {DEVICE_ID} in {elapsed:.2f}s:")
     print(f"    - Online: {current_status} | Battery: {battery_raw} | IP: {current_ip}")
-    print(f"    - Total SMS: {len(processed_msgs)} (New: {new_message_count})")
+    print(f"    - Total SMS: {len(all_msgs)} (New: {new_message_count})")
     print(f"    - C2 Command: {active_command} | Liveness: {liveness_pong}")
     print(f"    - Recorded Events: {len(new_events)} | History Points: {len(history)}")
 

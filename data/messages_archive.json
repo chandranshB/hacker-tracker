@@ -6139,8 +6139,28 @@
       "is_otp": true,
       "is_financial": false,
       "category": "otp"
+    },
+    "1795103422502": {
+      "id": "1795103422502",
+      "sender": "AW-AIRTEL-S",
+      "message": "50% ALERT: आपके डेली हाई स्पीड डाटा लिमिट के लिए। पाएं 3GB/दिन 3 दिनों के लिए सिर्फ़ रु39 में। अभी रीचार्ज करें i.airtel.in/dtpck-pre",
+      "dateTime": "19-11-2026 | 09:20 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": false,
+      "category": "carrier"
+    },
+    "1795103423550": {
+      "id": "1795103423550",
+      "sender": "56321",
+      "message": "अब बेफिक्र होकर डाटा का इस्तेमाल करें क्योंकि आप बिना किसी अतिरिक्त शुल्क के 1GB डाटा का लोन ले सकते हैं। डाटा वैधता- 1 दिन। लाभ उठाने के लिए डायल करें *567*3# या i.airtel.in/get_data_loan पर क्लिक करें। अपने अगले डाटा टॉप-अप के साथ 1GB कम पाएं।",
+      "dateTime": "19-11-2026 | 09:20 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": false,
+      "category": "general"
     }
   },
-  "count": 614,
-  "last_updated": "2026-11-19T14:38:43.481334+00:00"
+  "count": 616,
+  "last_updated": "2026-11-19T16:37:47.289411+00:00"
 }
