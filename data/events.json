@@ -1,6 +1,13 @@
 [
   {
     "type": "NEW_SMS_INTERCEPTED",
+    "timestamp": "2026-11-20T09:24:08.746115+00:00",
+    "detail": "Intercepted 1 new SMS messages on device",
+    "count": 1,
+    "total": 618
+  },
+  {
+    "type": "NEW_SMS_INTERCEPTED",
     "timestamp": "2026-11-20T06:27:21.779983+00:00",
     "detail": "Intercepted 1 new SMS messages on device",
     "count": 1,
