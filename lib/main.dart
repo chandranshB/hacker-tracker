@@ -121,7 +121,8 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _loadHistory() async {
     try {
-      final historyRes = await http.get(Uri.parse('data/history.json'));
+      final cacheBust = DateTime.now().millisecondsSinceEpoch;
+      final historyRes = await http.get(Uri.parse('data/history.json?t=$cacheBust'));
       if (historyRes.statusCode == 200 && historyRes.body != 'null') {
         final data = json.decode(historyRes.body) as List<dynamic>;
         setState(() {
@@ -134,7 +135,8 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _loadLocalSnapshots() async {
     setState(() => _isLoading = true);
     try {
-      final res = await http.get(Uri.parse('data/latest.json'));
+      final cacheBust = DateTime.now().millisecondsSinceEpoch;
+      final res = await http.get(Uri.parse('data/latest.json?t=$cacheBust'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body) as Map<String, dynamic>;
         final raw = data['raw'] as Map<String, dynamic>?;
@@ -188,7 +190,7 @@ class _MainScreenState extends State<MainScreen> {
         }
       }
 
-      final msgRes = await http.get(Uri.parse('data/messages_archive.json'));
+      final msgRes = await http.get(Uri.parse('data/messages_archive.json?t=$cacheBust'));
       if (msgRes.statusCode == 200) {
         final msgData = json.decode(msgRes.body) as Map<String, dynamic>;
         final rawMsgs = msgData['messages'] as Map<String, dynamic>?;
@@ -1752,18 +1754,27 @@ class _MainScreenState extends State<MainScreen> {
 
   // ==================== TIMELINE TAB (24H BATTERY GRAPH ONLY) ====================
   Widget _buildTimelineTab() {
-    int high = 85;
+    final effectiveHistory = List<Map<String, dynamic>>.from(_batteryHistory);
+    // Append current live battery as the latest point
+    effectiveHistory.add({
+      'timestamp': DateTime.now().toIso8601String(),
+      'battery_pct': _batteryPercent,
+      'battery_raw': '$_batteryPercent%',
+    });
+
+    int high = _batteryPercent;
     int low = _batteryPercent;
-    if (_batteryHistory.isNotEmpty) {
-      for (final item in _batteryHistory) {
-        final p = item['battery_pct'];
-        if (p is int) {
-          if (p > high) high = p;
-          if (p < low) low = p;
-        }
+    for (final item in effectiveHistory) {
+      final p = item['battery_pct'];
+      if (p is int) {
+        if (p > high) high = p;
+        if (p < low) low = p;
       }
     }
-    final drain = high - _batteryPercent;
+
+    final firstPct = effectiveHistory.isNotEmpty ? (effectiveHistory.first['battery_pct'] as int? ?? _batteryPercent) : _batteryPercent;
+    final netChange = _batteryPercent - firstPct;
+    final netChangeStr = netChange >= 0 ? '(+$netChange% in 24h)' : '($netChange% in 24h)';
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1805,8 +1816,12 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '(-$drain% in 24h)',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600),
+                        netChangeStr,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: netChange >= 0 ? const Color(0xFF00E676) : Colors.grey,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -1818,7 +1833,7 @@ class _MainScreenState extends State<MainScreen> {
 
               // The Custom Painted 24h Graph
               BatteryChartWidget(
-                data: _batteryHistory,
+                data: effectiveHistory,
                 currentBattery: _batteryPercent,
               ),
 
@@ -1838,11 +1853,21 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _buildMiniStatTile('24H DRAIN', '-$drain%', Icons.battery_alert, Colors.orangeAccent),
+                    child: _buildMiniStatTile(
+                      '24H CHANGE',
+                      netChange >= 0 ? '+$netChange%' : '$netChange%',
+                      netChange >= 0 ? Icons.trending_up : Icons.trending_down,
+                      netChange >= 0 ? const Color(0xFF00E676) : Colors.orangeAccent,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _buildMiniStatTile('DRAIN RATE', '~1.4%/hr', Icons.trending_down, Colors.amberAccent),
+                    child: _buildMiniStatTile(
+                      'STATUS',
+                      _batteryPercent >= 90 ? 'CHARGED' : 'ACTIVE',
+                      Icons.battery_charging_full,
+                      _batteryPercent >= 90 ? const Color(0xFF00E676) : Colors.amberAccent,
+                    ),
                   ),
                 ],
               ),
@@ -1913,18 +1938,17 @@ class BatteryChartWidget extends StatelessWidget {
         if (pct is int) {
           points.add(pct);
         } else if (pct != null) {
-          points.add(int.tryParse(pct.toString()) ?? currentBattery);
+          final parsed = int.tryParse(pct.toString());
+          if (parsed != null) points.add(parsed);
         }
       }
     }
 
+    // Always ensure the real-time battery reading is the terminal point on the graph
     if (points.isEmpty) {
-      const n = 48;
-      for (int i = 0; i < n; i++) {
-        final t = i / (n - 1);
-        final val = (85 - t * (85 - currentBattery)).round();
-        points.add(val);
-      }
+      points.add(currentBattery);
+    } else if (points.last != currentBattery) {
+      points.add(currentBattery);
     }
 
     return LayoutBuilder(

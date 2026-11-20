@@ -6159,8 +6159,18 @@
       "is_otp": false,
       "is_financial": false,
       "category": "general"
+    },
+    "1795149831390": {
+      "id": "1795149831390",
+      "sender": "AW-650025-P",
+      "message": "New for you: Airtel's Box Office Pack! Enjoy Amazon Prime, ZEE5, JioHotstar & 20+ OTTs, plus 30GB data, for just Rs. 200. Recharge now: https://i.airtel.in/prcnpck1",
+      "dateTime": "20-11-2026 | 10:13 am",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": true,
+      "category": "carrier"
     }
   },
-  "count": 616,
-  "last_updated": "2026-11-20T01:30:19.750815+00:00"
+  "count": 617,
+  "last_updated": "2026-11-20T06:27:21.779983+00:00"
 }
