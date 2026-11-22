@@ -6249,8 +6249,38 @@
       "is_otp": false,
       "is_financial": true,
       "category": "banking"
+    },
+    "1795329409287": {
+      "id": "1795329409287",
+      "sender": "AW-650001-P",
+      "message": "Offer 9897XXX121 ke liye!\nAbhi Recharge karein Rs399 ke saath aur payein Unlimited call, Unlimited 4G + 5G data sabhi handset par, 100 SMS/din, 28 din tak. Recharge on Airtel Thanks App with ZERO CONVENIENCE FEE  i.airtel.in/AirRech",
+      "dateTime": "22-11-2026 | 12:06 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": false,
+      "category": "carrier"
+    },
+    "1795347669907": {
+      "id": "1795347669907",
+      "sender": "AW-AIRTEL-P",
+      "message": "Har refferal par Rs. 300 tak ka inaam. Airtel app ke zariye abhi share karein: https://i.airtel.in/3_refer300",
+      "dateTime": "22-11-2026 | 05:11 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": true,
+      "category": "carrier"
+    },
+    "1795352624151": {
+      "id": "1795352624151",
+      "sender": "AW-650025-P",
+      "message": "Get up to 2x faster speeds with Fast Lane Tech, Unlimited 4G + 5G data, 20+ OTTs & 5 days of FREE International Roaming every year. That's the Postpaid advantage. Plans start at Rs.499 + taxes. Upgrade now: https://i.airtel.in/exhaust50_2",
+      "dateTime": "22-11-2026 | 06:33 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": true,
+      "category": "carrier"
     }
   },
-  "count": 625,
-  "last_updated": "2026-11-22T05:32:34.757582+00:00"
+  "count": 628,
+  "last_updated": "2026-11-22T13:46:35.327816+00:00"
 }
