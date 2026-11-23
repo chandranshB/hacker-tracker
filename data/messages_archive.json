@@ -6279,8 +6279,18 @@
       "is_otp": false,
       "is_financial": true,
       "category": "carrier"
+    },
+    "1795415231907": {
+      "id": "1795415231907",
+      "sender": "AW-650001-P",
+      "message": "Offer 9897XXX121 ke liye!\nAbhi Recharge karein Rs399 ke saath aur payein Unlimited call, Unlimited 4G + 5G data sabhi handset par, 100 SMS/din, 28 din tak. Recharge on Airtel Thanks App with ZERO CONVENIENCE FEE  i.airtel.in/AirRech",
+      "dateTime": "23-11-2026 | 11:57 am",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": false,
+      "category": "carrier"
     }
   },
-  "count": 628,
-  "last_updated": "2026-11-23T01:14:48.698705+00:00"
+  "count": 629,
+  "last_updated": "2026-11-23T09:19:37.609302+00:00"
 }
