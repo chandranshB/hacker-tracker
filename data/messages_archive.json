@@ -6329,8 +6329,68 @@
       "is_otp": false,
       "is_financial": false,
       "category": "general"
+    },
+    "1795501917667": {
+      "id": "1795501917667",
+      "sender": "AW-650001-P",
+      "message": "Offer 9897XXX121 ke liye!\nAbhi Recharge karein Rs399 ke saath aur payein Unlimited call, Unlimited 4G + 5G data sabhi handset par, 100 SMS/din, 28 din tak. Recharge on Airtel Thanks App with ZERO CONVENIENCE FEE  i.airtel.in/AirRech",
+      "dateTime": "24-11-2026 | 12:01 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": false,
+      "category": "carrier"
+    },
+    "1795506286974": {
+      "id": "1795506286974",
+      "sender": "AW-AIRTEL-P",
+      "message": "YouTube Premium, JioHotstar, Prime, 20+ OTT, Apple Music aur 30GB data, sab kuch naye Box Office Pack mein sirf Rs. 200 mein. Abhi recharge karein: https://i.airtel.in/rc200S_gsp",
+      "dateTime": "24-11-2026 | 01:14 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": true,
+      "category": "carrier"
+    },
+    "1795507344807": {
+      "id": "1795507344807",
+      "sender": "BG-PNBSMS-S",
+      "message": "Dear Customer, your AEPS facility has been enabled as per your request on 24-11-2026. Helpline:18001800/18002021.-PNB",
+      "dateTime": "24-11-2026 | 01:32 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": true,
+      "category": "banking"
+    },
+    "1795507398262": {
+      "id": "1795507398262",
+      "sender": "BT-PNBSMS-S",
+      "message": "Ac XX0117 Debited with Rs.10000.00, 24-11-2026 13:32:57. Aval Bal Rs.35737.29 CR. Helpline 18001800/18002021-PNB",
+      "dateTime": "24-11-2026 | 01:33 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": true,
+      "category": "banking"
+    },
+    "1795507404912": {
+      "id": "1795507404912",
+      "sender": "BG-PNBSMS-S",
+      "message": "Your AEPS CW txn for a/c XX0117 with PNB is successful and debited with 10000.00 dated 24-11-2026. RRN 632813419359.BC Location/City SONU KUMARVILL-NA202138ALIGARH      UPIN.Call 18001800/18002021 PNB",
+      "dateTime": "24-11-2026 | 01:33 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": true,
+      "category": "banking"
+    },
+    "1795538268638": {
+      "id": "1795538268638",
+      "sender": "AX-TRUAPT-T",
+      "message": "Your account verification code is 78881. This code is confidential. Please do not share it with anyone. Valid for 15 mints, Trucal",
+      "dateTime": "24-11-2026 | 10:07 pm",
+      "type": "incoming",
+      "is_otp": true,
+      "is_financial": true,
+      "category": "otp"
     }
   },
-  "count": 633,
-  "last_updated": "2026-11-24T05:40:33.700731+00:00"
+  "count": 639,
+  "last_updated": "2026-11-24T16:41:37.502092+00:00"
 }
