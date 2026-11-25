@@ -6399,8 +6399,48 @@
       "is_otp": false,
       "is_financial": false,
       "category": "carrier"
+    },
+    "1795600903224": {
+      "id": "1795600903224",
+      "sender": "AW-AIRTEL-P",
+      "message": "Real-time data alert prapt karein. Airtel app par abhi check karein https://i.airtel.in/Data_Balance",
+      "dateTime": "25-11-2026 | 03:31 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": false,
+      "category": "carrier"
+    },
+    "1795613201384": {
+      "id": "1795613201384",
+      "sender": "AW-AIRTEL-S",
+      "message": "सर्विस अपडेट: आपके क्षेत्र में तकनीकी समस्या के कारण आपकी एयरटेल मोबाइल सेवा अभी काम नहीं कर रही है। इससे हुई असुविधा के लिए हमें खेद है। कृपया निश्चिंत रहें, हमारी टीम इसे जल्द से जल्द ठीक करने में लगी हुई है।",
+      "dateTime": "25-11-2026 | 06:56 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": false,
+      "category": "carrier"
+    },
+    "1795620834397": {
+      "id": "1795620834397",
+      "sender": "AW-AIRTEL-S",
+      "message": "सर्विस अपडेट: आपके क्षेत्र में मोबाइल नेटवर्क से जुड़ी तकनीकी समस्या अब ठीक कर दी गई है और कनेक्टिविटी अब फिर से शुरू हो गई है। हम आपके धैर्य की सराहना करते हैं।",
+      "dateTime": "25-11-2026 | 09:03 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": false,
+      "category": "carrier"
+    },
+    "1795625115529": {
+      "id": "1795625115529",
+      "sender": "BT-PNBSMS-S",
+      "message": "Aadhaar No XXXX-XXXX-3927 has been seeded into your a/c XXXXXXXX3000117. Contact branch in case of discrepancy.Register for e-statement,if not done.-PNB",
+      "dateTime": "25-11-2026 | 10:15 pm",
+      "type": "incoming",
+      "is_otp": false,
+      "is_financial": true,
+      "category": "banking"
     }
   },
-  "count": 640,
-  "last_updated": "2026-11-25T09:59:30.407485+00:00"
+  "count": 644,
+  "last_updated": "2026-11-25T19:47:57.738146+00:00"
 }
