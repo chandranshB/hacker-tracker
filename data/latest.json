@@ -1,11 +1,11 @@
 {
   "device_id": "03e768e104ef026d",
-  "last_tracked_utc": "2026-11-24T16:41:37.502092+00:00",
-  "last_tracked_display": "2026-11-24 16:41:37 UTC",
+  "last_tracked_utc": "2026-11-25T01:12:00.012332+00:00",
+  "last_tracked_display": "2026-11-25 01:12:00 UTC",
   "is_online": true,
   "battery": {
-    "raw": "25%",
-    "percentage": 25
+    "raw": "89%",
+    "percentage": 89
   },
   "network": {
     "ip_address": "106.211.47.194",
@@ -48,7 +48,7 @@
   },
   "messaging_summary": {
     "total_messages": 639,
-    "new_in_this_run": 6,
+    "new_in_this_run": 0,
     "latest_message_id": "1795538268638",
     "latest_message_time": "24-11-2026 | 10:07 pm",
     "financial_count": 231,
@@ -57,7 +57,7 @@
   "raw": {
     "client": {
       "androidV": "15",
-      "battery": "25%",
+      "battery": "89%",
       "cpu_arch": "arm64-v8a",
       "deviceId": "03e768e104ef026d",
       "ip_address": "106.211.47.194",
