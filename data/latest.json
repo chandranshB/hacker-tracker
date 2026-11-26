@@ -1,11 +1,11 @@
 {
   "device_id": "03e768e104ef026d",
-  "last_tracked_utc": "2026-11-26T02:33:31.243468+00:00",
-  "last_tracked_display": "2026-11-26 02:33:31 UTC",
-  "is_online": false,
+  "last_tracked_utc": "2026-11-26T11:41:14.198038+00:00",
+  "last_tracked_display": "2026-11-26 11:41:14 UTC",
+  "is_online": true,
   "battery": {
-    "raw": "100%",
-    "percentage": 100
+    "raw": "88%",
+    "percentage": 88
   },
   "network": {
     "ip_address": "106.211.47.194",
@@ -37,28 +37,30 @@
     "webhook_event": {
       "checkLiveness": {
         "text": "pong"
-      },
-      "sendSms": {
-        "from": 0,
-        "isSended": false,
-        "message": "HDFCUPI 8QW8KV9WFP1ilqlxfqBmG3tc6amohgyEdZwZ53iu0Fbk5pdH%2Flgty8MZURhCMBye",
-        "to": "+919560241900"
       }
     }
   },
   "messaging_summary": {
-    "total_messages": 644,
-    "new_in_this_run": 0,
-    "latest_message_id": "1795625115529",
-    "latest_message_time": "25-11-2026 | 10:15 pm",
-    "financial_count": 232,
+    "total_messages": 648,
+    "new_in_this_run": 4,
+    "latest_message_id": "1795687807791",
+    "latest_message_time": "26-11-2026 | 03:40 pm",
+    "financial_count": 233,
     "otp_count": 70
   },
   "raw": {
     "client": {
       "androidV": "15",
-      "battery": "100%",
+      "battery": "88%",
       "cpu_arch": "arm64-v8a",
+      "currentForwarding": {
+        "sms": {
+          "from": 0,
+          "isActive": false,
+          "timestamp": 1795676355757,
+          "to": ""
+        }
+      },
       "deviceId": "03e768e104ef026d",
       "ip_address": "106.211.47.194",
       "isRoot": false,
@@ -76,17 +78,11 @@
           "simSlotIndex": "0"
         }
       ],
-      "status": false,
+      "status": true,
       "storage": "104GB",
       "webhookEvent": {
         "checkLiveness": {
           "text": "pong"
-        },
-        "sendSms": {
-          "from": 0,
-          "isSended": false,
-          "message": "HDFCUPI 8QW8KV9WFP1ilqlxfqBmG3tc6amohgyEdZwZ53iu0Fbk5pdH%2Flgty8MZURhCMBye",
-          "to": "+919560241900"
         }
       }
     },
