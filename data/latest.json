@@ -1,11 +1,11 @@
 {
   "device_id": "03e768e104ef026d",
-  "last_tracked_utc": "2026-11-27T21:44:10.661346+00:00",
-  "last_tracked_display": "2026-11-27 21:44:10 UTC",
-  "is_online": false,
+  "last_tracked_utc": "2026-11-28T03:38:18.367075+00:00",
+  "last_tracked_display": "2026-11-28 03:38:18 UTC",
+  "is_online": true,
   "battery": {
-    "raw": "81%",
-    "percentage": 81
+    "raw": "68%",
+    "percentage": 68
   },
   "network": {
     "ip_address": "106.211.47.194",
@@ -51,7 +51,7 @@
   "raw": {
     "client": {
       "androidV": "15",
-      "battery": "81%",
+      "battery": "68%",
       "cpu_arch": "arm64-v8a",
       "currentForwarding": {
         "sms": {
@@ -78,7 +78,7 @@
           "simSlotIndex": "0"
         }
       ],
-      "status": false,
+      "status": true,
       "storage": "104GB",
       "webhookEvent": {
         "checkLiveness": {
